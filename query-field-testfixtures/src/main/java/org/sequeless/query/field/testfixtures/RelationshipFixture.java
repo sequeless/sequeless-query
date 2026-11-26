@@ -19,6 +19,7 @@ import org.sequeless.query.field.api.OntologyVersionRef;
  * that is walkable in one version but not another are out of scope for this simple model.
  *
  * @param id the durable identity of this relationship's property; never {@code null}
+ * @param iri the property's IRI, stable across a slug rename; never {@code null} or blank, and never containing '|'
  * @param slug the current short name of this relationship; never {@code null} or blank
  * @param targetClassSlug the slug of the class this relationship points to; never {@code null} or
  *     blank
@@ -29,6 +30,7 @@ import org.sequeless.query.field.api.OntologyVersionRef;
  */
 public record RelationshipFixture(
         UUID id,
+        String iri,
         String slug,
         String targetClassSlug,
         Cardinality cardinality,
@@ -41,6 +43,13 @@ public record RelationshipFixture(
      */
     public RelationshipFixture {
         Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(iri, "iri must not be null");
+        if (iri.isBlank()) {
+            throw new IllegalArgumentException("iri must not be blank");
+        }
+        if (iri.contains("|")) {
+            throw new IllegalArgumentException("iri must not contain '|'");
+        }
         Objects.requireNonNull(slug, "slug must not be null");
         if (slug.isBlank()) {
             throw new IllegalArgumentException("slug must not be blank");

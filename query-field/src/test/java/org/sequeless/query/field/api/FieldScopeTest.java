@@ -39,7 +39,8 @@ class FieldScopeTest {
 
     private static Field facet(String slug) {
         return new Field(
-                new FieldPath(List.of(new PathSegment(UUID.nameUUIDFromBytes(slug.getBytes()), slug, null))),
+                new FieldPath(List.of(new PathSegment(
+                        UUID.nameUUIDFromBytes(slug.getBytes()), "urn:ont:property:" + slug, slug, null))),
                 FieldType.STRING,
                 null,
                 Cardinality.SINGLE,

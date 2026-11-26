@@ -15,8 +15,11 @@ import org.sequeless.query.field.api.PathSegment;
 class FieldPathCodecTest {
 
     private static final UUID CUSTOMER_ID = UUID.fromString("00000000-0000-0000-0000-0000000000c1");
+    private static final String CUSTOMER_IRI = "urn:ont:property:Invoice.customer";
     private static final UUID ADDRESS_ID = UUID.fromString("00000000-0000-0000-0000-0000000000a1");
+    private static final String ADDRESS_IRI = "urn:ont:property:Customer.address";
     private static final UUID CITY_ID = UUID.fromString("00000000-0000-0000-0000-0000000000c2");
+    private static final String CITY_IRI = "urn:ont:property:Customer.city";
 
     private static ClassRef classRef(String slug) {
         return new ClassRef(UUID.nameUUIDFromBytes(slug.getBytes()), slug, "urn:class:" + slug, label(slug));
@@ -28,9 +31,9 @@ class FieldPathCodecTest {
 
     private static FieldPath traversingPath() {
         return new FieldPath(List.of(
-                new PathSegment(CUSTOMER_ID, "customer", classRef("Customer")),
-                new PathSegment(ADDRESS_ID, "address", classRef("Address")),
-                new PathSegment(CITY_ID, "city", null)));
+                new PathSegment(CUSTOMER_ID, CUSTOMER_IRI, "customer", classRef("Customer")),
+                new PathSegment(ADDRESS_ID, ADDRESS_IRI, "address", classRef("Address")),
+                new PathSegment(CITY_ID, CITY_IRI, "city", null)));
     }
 
     @Test

@@ -12,7 +12,9 @@ import org.junit.jupiter.api.Test;
 class FieldResolutionExceptionTest {
 
     private static final UUID CUSTOMER_ID = UUID.fromString("00000000-0000-0000-0000-0000000000c1");
+    private static final String CUSTOMER_IRI = "urn:ont:property:Invoice.customer";
     private static final UUID CITY_ID = UUID.fromString("00000000-0000-0000-0000-0000000000c2");
+    private static final String CITY_IRI = "urn:ont:property:Customer.city";
 
     private static LocalizedText label(String value) {
         return new LocalizedText(value, "en");
@@ -24,8 +26,8 @@ class FieldResolutionExceptionTest {
 
     private static FieldPath customerCity() {
         return new FieldPath(List.of(
-                new PathSegment(CUSTOMER_ID, "customer", classRef("Customer")),
-                new PathSegment(CITY_ID, "city", null)));
+                new PathSegment(CUSTOMER_ID, CUSTOMER_IRI, "customer", classRef("Customer")),
+                new PathSegment(CITY_ID, CITY_IRI, "city", null)));
     }
 
     @Test

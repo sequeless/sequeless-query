@@ -24,6 +24,11 @@ import org.sequeless.query.field.api.OperatorRestriction;
  * identity without re-deriving it from a fixture instance. Where the same conceptual property
  * (for example {@code Invoice.status} or {@code Invoice.total}) appears unchanged in more than one
  * scenario, it deliberately reuses the same UUID constant across those scenarios.
+ *
+ * <p>Each property and relationship also carries an IRI of the form {@code
+ * urn:ont:property:<Class>.<slug>}, built from the class it is declared on. A property whose slug
+ * changes between versions keeps the one IRI across both rows, because the IRI is durable
+ * identity, as the UUID is.
  */
 public final class ContractFixtures {
 
@@ -110,13 +115,49 @@ public final class ContractFixtures {
                 classIri("Invoice"),
                 Set.of(),
                 List.of(
-                        scalarProperty(STATUS_ID, "status", FieldType.STRING, FILTERABLE_FACETABLE_SORTABLE, V1),
-                        scalarProperty(TOTAL_ID, "total", FieldType.DECIMAL, FILTERABLE_SORTABLE, V1),
-                        scalarProperty(DESCRIPTION_ID, "description", FieldType.STRING, FILTERABLE_SEARCHABLE, V1),
-                        scalarProperty(INTERNAL_NOTES_ID, "internalNotes", FieldType.STRING, NO_CAPABILITIES, V1)),
+                        scalarProperty(
+                                STATUS_ID,
+                                propertyIri("Invoice", "status"),
+                                "status",
+                                FieldType.STRING,
+                                FILTERABLE_FACETABLE_SORTABLE,
+                                V1),
+                        scalarProperty(
+                                TOTAL_ID,
+                                propertyIri("Invoice", "total"),
+                                "total",
+                                FieldType.DECIMAL,
+                                FILTERABLE_SORTABLE,
+                                V1),
+                        scalarProperty(
+                                DESCRIPTION_ID,
+                                propertyIri("Invoice", "description"),
+                                "description",
+                                FieldType.STRING,
+                                FILTERABLE_SEARCHABLE,
+                                V1),
+                        scalarProperty(
+                                INTERNAL_NOTES_ID,
+                                propertyIri("Invoice", "internalNotes"),
+                                "internalNotes",
+                                FieldType.STRING,
+                                NO_CAPABILITIES,
+                                V1)),
                 List.of(
-                        relationship(INVOICE_CUSTOMER_REL_ID, "customer", "Customer", true, V1),
-                        relationship(INVOICE_INTERNAL_AUDIT_REL_ID, "internalAudit", "AuditLog", false, V1)));
+                        relationship(
+                                INVOICE_CUSTOMER_REL_ID,
+                                propertyIri("Invoice", "customer"),
+                                "customer",
+                                "Customer",
+                                true,
+                                V1),
+                        relationship(
+                                INVOICE_INTERNAL_AUDIT_REL_ID,
+                                propertyIri("Invoice", "internalAudit"),
+                                "internalAudit",
+                                "AuditLog",
+                                false,
+                                V1)));
 
         ClassFixture customer = new ClassFixture(
                 CUSTOMER_CLASS_ID,
@@ -124,17 +165,42 @@ public final class ContractFixtures {
                 classIri("Customer"),
                 Set.of(),
                 List.of(
-                        scalarProperty(NAME_ID, "name", FieldType.STRING, FILTERABLE_ONLY, V1),
-                        scalarProperty(CITY_ID, "city", FieldType.STRING, FILTERABLE_FACETABLE, V1),
-                        scalarProperty(TIER_ID, "tier", FieldType.STRING, FILTERABLE_FACETABLE, V1)),
-                List.of(relationship(CUSTOMER_ACCOUNT_REL_ID, "account", "Account", true, V1)));
+                        scalarProperty(
+                                NAME_ID,
+                                propertyIri("Customer", "name"),
+                                "name",
+                                FieldType.STRING,
+                                FILTERABLE_ONLY,
+                                V1),
+                        scalarProperty(
+                                CITY_ID,
+                                propertyIri("Customer", "city"),
+                                "city",
+                                FieldType.STRING,
+                                FILTERABLE_FACETABLE,
+                                V1),
+                        scalarProperty(
+                                TIER_ID,
+                                propertyIri("Customer", "tier"),
+                                "tier",
+                                FieldType.STRING,
+                                FILTERABLE_FACETABLE,
+                                V1)),
+                List.of(relationship(
+                        CUSTOMER_ACCOUNT_REL_ID, propertyIri("Customer", "account"), "account", "Account", true, V1)));
 
         ClassFixture account = new ClassFixture(
                 ACCOUNT_CLASS_ID,
                 "Account",
                 classIri("Account"),
                 Set.of(),
-                List.of(scalarProperty(REFERENCE_ID, "reference", FieldType.STRING, FILTERABLE_ONLY, V1)),
+                List.of(scalarProperty(
+                        REFERENCE_ID,
+                        propertyIri("Account", "reference"),
+                        "reference",
+                        FieldType.STRING,
+                        FILTERABLE_ONLY,
+                        V1)),
                 List.of());
 
         ClassFixture auditLog = new ClassFixture(
@@ -142,7 +208,8 @@ public final class ContractFixtures {
                 "AuditLog",
                 classIri("AuditLog"),
                 Set.of(),
-                List.of(scalarProperty(NOTE_ID, "note", FieldType.STRING, FILTERABLE_ONLY, V1)),
+                List.of(scalarProperty(
+                        NOTE_ID, propertyIri("AuditLog", "note"), "note", FieldType.STRING, FILTERABLE_ONLY, V1)),
                 List.of());
 
         return new ContractFixture(TENANT, List.of(V1), List.of(invoice, customer, account, auditLog));
@@ -162,11 +229,41 @@ public final class ContractFixtures {
                 classIri("Invoice"),
                 Set.of(),
                 List.of(
-                        scalarProperty(CUSTOMER_NAME_ID, "custName", FieldType.STRING, FILTERABLE_ONLY, V1),
-                        scalarProperty(CUSTOMER_NAME_ID, "customerName", FieldType.STRING, FILTERABLE_ONLY, V2),
-                        scalarProperty(TOTAL_ID, "total", FieldType.DECIMAL, FILTERABLE_ONLY, V1),
-                        scalarProperty(TOTAL_ID, "total", FieldType.DECIMAL, FILTERABLE_ONLY, V2),
-                        scalarProperty(REGION_ID, "region", FieldType.STRING, FILTERABLE_ONLY, V2)),
+                        scalarProperty(
+                                CUSTOMER_NAME_ID,
+                                propertyIri("Invoice", "customerName"),
+                                "custName",
+                                FieldType.STRING,
+                                FILTERABLE_ONLY,
+                                V1),
+                        scalarProperty(
+                                CUSTOMER_NAME_ID,
+                                propertyIri("Invoice", "customerName"),
+                                "customerName",
+                                FieldType.STRING,
+                                FILTERABLE_ONLY,
+                                V2),
+                        scalarProperty(
+                                TOTAL_ID,
+                                propertyIri("Invoice", "total"),
+                                "total",
+                                FieldType.DECIMAL,
+                                FILTERABLE_ONLY,
+                                V1),
+                        scalarProperty(
+                                TOTAL_ID,
+                                propertyIri("Invoice", "total"),
+                                "total",
+                                FieldType.DECIMAL,
+                                FILTERABLE_ONLY,
+                                V2),
+                        scalarProperty(
+                                REGION_ID,
+                                propertyIri("Invoice", "region"),
+                                "region",
+                                FieldType.STRING,
+                                FILTERABLE_ONLY,
+                                V2)),
                 List.of());
 
         return new ContractFixture(TENANT, List.of(V1, V2), List.of(invoice));
@@ -186,10 +283,34 @@ public final class ContractFixtures {
                 classIri("Invoice"),
                 Set.of(),
                 List.of(
-                        scalarProperty(ISSUED_AT_ID, "issuedAt", FieldType.STRING, FILTERABLE_ONLY, V1),
-                        scalarProperty(ISSUED_AT_ID, "issuedAt", FieldType.DATETIME, FILTERABLE_ONLY, V2),
-                        scalarProperty(TOTAL_ID, "total", FieldType.DECIMAL, FILTERABLE_ONLY, V1),
-                        scalarProperty(TOTAL_ID, "total", FieldType.DECIMAL, FILTERABLE_ONLY, V2)),
+                        scalarProperty(
+                                ISSUED_AT_ID,
+                                propertyIri("Invoice", "issuedAt"),
+                                "issuedAt",
+                                FieldType.STRING,
+                                FILTERABLE_ONLY,
+                                V1),
+                        scalarProperty(
+                                ISSUED_AT_ID,
+                                propertyIri("Invoice", "issuedAt"),
+                                "issuedAt",
+                                FieldType.DATETIME,
+                                FILTERABLE_ONLY,
+                                V2),
+                        scalarProperty(
+                                TOTAL_ID,
+                                propertyIri("Invoice", "total"),
+                                "total",
+                                FieldType.DECIMAL,
+                                FILTERABLE_ONLY,
+                                V1),
+                        scalarProperty(
+                                TOTAL_ID,
+                                propertyIri("Invoice", "total"),
+                                "total",
+                                FieldType.DECIMAL,
+                                FILTERABLE_ONLY,
+                                V2)),
                 List.of());
 
         return new ContractFixture(TENANT, List.of(V1, V2), List.of(invoice));
@@ -209,11 +330,41 @@ public final class ContractFixtures {
                 classIri("Invoice"),
                 Set.of(),
                 List.of(
-                        scalarProperty(STATUS_ID, "status", FieldType.STRING, FILTERABLE_ONLY, V1),
-                        scalarProperty(STATUS_ID, "status", FieldType.STRING, FILTERABLE_ONLY, V2),
-                        scalarProperty(TOTAL_ID, "total", FieldType.DECIMAL, FILTERABLE_ONLY, V1),
-                        scalarProperty(TOTAL_ID, "total", FieldType.DECIMAL, FILTERABLE_ONLY, V2),
-                        scalarProperty(REGION_ID, "region", FieldType.STRING, FILTERABLE_ONLY, V2)),
+                        scalarProperty(
+                                STATUS_ID,
+                                propertyIri("Invoice", "status"),
+                                "status",
+                                FieldType.STRING,
+                                FILTERABLE_ONLY,
+                                V1),
+                        scalarProperty(
+                                STATUS_ID,
+                                propertyIri("Invoice", "status"),
+                                "status",
+                                FieldType.STRING,
+                                FILTERABLE_ONLY,
+                                V2),
+                        scalarProperty(
+                                TOTAL_ID,
+                                propertyIri("Invoice", "total"),
+                                "total",
+                                FieldType.DECIMAL,
+                                FILTERABLE_ONLY,
+                                V1),
+                        scalarProperty(
+                                TOTAL_ID,
+                                propertyIri("Invoice", "total"),
+                                "total",
+                                FieldType.DECIMAL,
+                                FILTERABLE_ONLY,
+                                V2),
+                        scalarProperty(
+                                REGION_ID,
+                                propertyIri("Invoice", "region"),
+                                "region",
+                                FieldType.STRING,
+                                FILTERABLE_ONLY,
+                                V2)),
                 List.of());
 
         return new ContractFixture(TENANT, List.of(V1, V2), List.of(invoice));
@@ -232,8 +383,20 @@ public final class ContractFixtures {
                 classIri("Invoice"),
                 Set.of(),
                 List.of(
-                        scalarProperty(LEGACY_FIELD_ID, "legacyField", FieldType.STRING, FILTERABLE_ONLY, V1),
-                        scalarProperty(NEW_FIELD_ID, "newField", FieldType.STRING, FILTERABLE_ONLY, V2)),
+                        scalarProperty(
+                                LEGACY_FIELD_ID,
+                                propertyIri("Invoice", "legacyField"),
+                                "legacyField",
+                                FieldType.STRING,
+                                FILTERABLE_ONLY,
+                                V1),
+                        scalarProperty(
+                                NEW_FIELD_ID,
+                                propertyIri("Invoice", "newField"),
+                                "newField",
+                                FieldType.STRING,
+                                FILTERABLE_ONLY,
+                                V2)),
                 List.of());
 
         return new ContractFixture(TENANT, List.of(V1, V2), List.of(invoice));
@@ -252,15 +415,23 @@ public final class ContractFixtures {
                 "Invoice",
                 classIri("Invoice"),
                 Set.of(),
-                List.of(scalarProperty(STATUS_ID, "status", FieldType.STRING, FILTERABLE_ONLY, V1)),
-                List.of(relationship(INVOICE_CUSTOMER_REL_ID, "customer", "Customer", false, V1)));
+                List.of(scalarProperty(
+                        STATUS_ID, propertyIri("Invoice", "status"), "status", FieldType.STRING, FILTERABLE_ONLY, V1)),
+                List.of(relationship(
+                        INVOICE_CUSTOMER_REL_ID,
+                        propertyIri("Invoice", "customer"),
+                        "customer",
+                        "Customer",
+                        false,
+                        V1)));
 
         ClassFixture customer = new ClassFixture(
                 CUSTOMER_CLASS_ID,
                 "Customer",
                 classIri("Customer"),
                 Set.of(),
-                List.of(scalarProperty(CITY_ID, "city", FieldType.STRING, FILTERABLE_ONLY, V1)),
+                List.of(scalarProperty(
+                        CITY_ID, propertyIri("Customer", "city"), "city", FieldType.STRING, FILTERABLE_ONLY, V1)),
                 List.of());
 
         return new ContractFixture(TENANT, List.of(V1), List.of(invoice, customer));
@@ -279,18 +450,20 @@ public final class ContractFixtures {
                 "A",
                 classIri("A"),
                 Set.of(),
-                List.of(scalarProperty(A_NAME_ID, "name", FieldType.STRING, FILTERABLE_ONLY, V1)),
+                List.of(scalarProperty(
+                        A_NAME_ID, propertyIri("A", "name"), "name", FieldType.STRING, FILTERABLE_ONLY, V1)),
                 List.of(
-                        relationship(A_TO_B_REL_ID, "toB", "B", true, V1),
-                        relationship(A_TO_C_REL_ID, "toC", "C", true, V1)));
+                        relationship(A_TO_B_REL_ID, propertyIri("A", "toB"), "toB", "B", true, V1),
+                        relationship(A_TO_C_REL_ID, propertyIri("A", "toC"), "toC", "C", true, V1)));
 
         ClassFixture b = new ClassFixture(
                 B_CLASS_ID,
                 "B",
                 classIri("B"),
                 Set.of(),
-                List.of(scalarProperty(B_NAME_ID, "name", FieldType.STRING, FILTERABLE_ONLY, V1)),
-                List.of(relationship(B_TO_A_REL_ID, "toA", "A", true, V1)));
+                List.of(scalarProperty(
+                        B_NAME_ID, propertyIri("B", "name"), "name", FieldType.STRING, FILTERABLE_ONLY, V1)),
+                List.of(relationship(B_TO_A_REL_ID, propertyIri("B", "toA"), "toA", "A", true, V1)));
 
         // Deliberately a different UUID than A.toB: identity is per-class, and reusing A's toB id
         // here would wrongly claim this is the same relationship property as A's.
@@ -299,8 +472,9 @@ public final class ContractFixtures {
                 "C",
                 classIri("C"),
                 Set.of(),
-                List.of(scalarProperty(C_NAME_ID, "name", FieldType.STRING, FILTERABLE_ONLY, V1)),
-                List.of(relationship(C_TO_B_REL_ID, "toB", "B", true, V1)));
+                List.of(scalarProperty(
+                        C_NAME_ID, propertyIri("C", "name"), "name", FieldType.STRING, FILTERABLE_ONLY, V1)),
+                List.of(relationship(C_TO_B_REL_ID, propertyIri("C", "toB"), "toB", "B", true, V1)));
 
         return new ContractFixture(TENANT, List.of(V1), List.of(a, b, c));
     }
@@ -324,14 +498,21 @@ public final class ContractFixtures {
         for (int level = 0; level <= 5; level++) {
             String slug = "Level" + level;
             List<RelationshipFixture> relationships = level < 5
-                    ? List.of(relationship(stepRelIds.get(level), "step", "Level" + (level + 1), true, V1))
+                    ? List.of(relationship(
+                            stepRelIds.get(level), propertyIri(slug, "step"), "step", "Level" + (level + 1), true, V1))
                     : List.of();
             levels.add(new ClassFixture(
                     levelClassIds.get(level),
                     slug,
                     classIri(slug),
                     Set.of(),
-                    List.of(scalarProperty(valueIds.get(level), "value", FieldType.STRING, FILTERABLE_ONLY, V1)),
+                    List.of(scalarProperty(
+                            valueIds.get(level),
+                            propertyIri(slug, "value"),
+                            "value",
+                            FieldType.STRING,
+                            FILTERABLE_ONLY,
+                            V1)),
                     relationships));
         }
 
@@ -350,15 +531,23 @@ public final class ContractFixtures {
                 "Invoice",
                 classIri("Invoice"),
                 Set.of(),
-                List.of(scalarProperty(STATUS_ID, "status", FieldType.STRING, FILTERABLE_ONLY, V1)),
-                List.of(relationship(INVOICE_CUSTOMER_REL_ID, "customer", "Customer", true, V1)));
+                List.of(scalarProperty(
+                        STATUS_ID, propertyIri("Invoice", "status"), "status", FieldType.STRING, FILTERABLE_ONLY, V1)),
+                List.of(relationship(
+                        INVOICE_CUSTOMER_REL_ID,
+                        propertyIri("Invoice", "customer"),
+                        "customer",
+                        "Customer",
+                        true,
+                        V1)));
 
         ClassFixture customer = new ClassFixture(
                 CUSTOMER_CLASS_ID,
                 "Customer",
                 classIri("Customer"),
                 Set.of("finance"),
-                List.of(scalarProperty(CITY_ID, "city", FieldType.STRING, FILTERABLE_ONLY, V1)),
+                List.of(scalarProperty(
+                        CITY_ID, propertyIri("Customer", "city"), "city", FieldType.STRING, FILTERABLE_ONLY, V1)),
                 List.of());
 
         return new ContractFixture(TENANT, List.of(V1), List.of(invoice, customer));
@@ -368,10 +557,21 @@ public final class ContractFixtures {
         return "urn:ont:class:" + slug;
     }
 
+    /**
+     * The IRI of a property declared on the class {@code classSlug}, in the same style as {@link
+     * #classIri(String)}. Callers pass the IRI explicitly to the row helpers so that two rows
+     * sharing one property id (a slug rename, or a type change across versions) also share one
+     * IRI.
+     */
+    private static String propertyIri(String classSlug, String slug) {
+        return "urn:ont:property:" + classSlug + "." + slug;
+    }
+
     private static PropertyFixture scalarProperty(
-            UUID id, String slug, FieldType type, Capabilities capabilities, OntologyVersionRef version) {
+            UUID id, String iri, String slug, FieldType type, Capabilities capabilities, OntologyVersionRef version) {
         return new PropertyFixture(
                 id,
+                iri,
                 slug,
                 type,
                 Cardinality.SINGLE,
@@ -384,7 +584,12 @@ public final class ContractFixtures {
     }
 
     private static RelationshipFixture relationship(
-            UUID id, String slug, String targetClassSlug, boolean walkable, OntologyVersionRef... versions) {
-        return new RelationshipFixture(id, slug, targetClassSlug, Cardinality.SINGLE, walkable, Set.of(versions));
+            UUID id,
+            String iri,
+            String slug,
+            String targetClassSlug,
+            boolean walkable,
+            OntologyVersionRef... versions) {
+        return new RelationshipFixture(id, iri, slug, targetClassSlug, Cardinality.SINGLE, walkable, Set.of(versions));
     }
 }

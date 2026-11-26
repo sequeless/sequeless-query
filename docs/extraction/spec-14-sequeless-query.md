@@ -4,7 +4,7 @@ Issue: [#42](https://github.com/sequeless/sequeless-prototype/issues/42). Map: [
 
 This spec is committed in the first code PR of this repo, as the run rules require. The prototype is unchanged until spec 17 (prototype-stage4-cutover) deletes the moved code.
 
-Labels such as "(Q8)" or "(Q11)" name the Navigator decisions taken for this spec on 2026-11-26, in the order they were taken: Q1 ADR numbering; Q2 Browse request and result names; Q3 and Q10 the version wrapper; Q4 the testfixtures module; Q5 the Flyway migrations; Q6 query-owned Object view component types; Q7 the traversal key; Q8 the tenant type; Q9 the index port's input; Q11 version identifiers in the Field contract; Q12 the index port's return value. Each decision is restated where it applies.
+Labels such as "(Q8)" or "(Q11)" name the Navigator decisions taken for this spec on 2026-11-26, in the order they were taken: Q1 ADR numbering; Q2 Browse request and result names; Q3 and Q10 the version wrapper; Q4 the testfixtures module; Q5 the Flyway migrations; Q6 query-owned Object view component types; Q7 the traversal key; Q8 the tenant type; Q9 the index port's input; Q11 version identifiers in the Field contract; Q12 the index port's return value; Q13 the property IRI on `PathSegment` and `Relationship`. Each decision is restated where it applies.
 
 ## 1. Identity, stage and dependencies
 
@@ -121,7 +121,8 @@ Every module follows ADR kernel 0001, the package name follows the repo segment:
 | `Principal` (facet-core) | Removed | Use kernel-identity `Principal` (ADR 0003) |
 | `Capabilities` (`filterable`, `facetable`, `searchable`, `sortable`) | Keeps its name | `facetable` is kept (#14) |
 | `Concept`, `ConceptQuery`, `ConceptSource`, `ConceptSchemeRef` | Keep their names | #14 |
-| `ClassRef`, `Cardinality`, `LocalizedText`, `OperatorRestriction`, `InferenceSupport`, `PathSegment`, `StampMode`, `TraversalConfig` | Keep their names | |
+| `ClassRef`, `Cardinality`, `LocalizedText`, `OperatorRestriction`, `InferenceSupport`, `StampMode`, `TraversalConfig` | Keep their names | |
+| `PathSegment` | Keeps its name and gains `iri` (String, non-blank, no `\|`) | Q13: the traversal key of 6.5 is built from segment IRIs |
 
 New in query-field: `OntologyVersionRef`, a record of one `int` value of at least 1. It lives in `org.sequeless.query.field.api`, because the Field contract needs it and query-core and query-schema-adapter import it from there (Q10, Q11).
 
@@ -132,7 +133,7 @@ New in query-field: `OntologyVersionRef`, a record of one `int` value of at leas
 | `BrowseQuery` | Record | `FilterNode filter` (optional), `Optional<String> text`, `List<Sort> sorts`, `Page page`, `List<FieldPath> facets` (Q2) |
 | `BrowseResult` | Record | `List<ObjectView> items`, `long total`, `Map<FieldPath, List<FacetBucket>> facets` |
 | `ObjectView` | Record | `ObjectId id`, `TypeRef type`, `TenantId tenant`, `long version`, `Optional<String> state`, `Map<PropertyRef, Value> properties`, `Audit audit`, `boolean deleted` |
-| `TypeRef`, `PropertyRef` | Records | Each wraps one IRI `String` (Q6). A property key is one IRI. A traversal key is the `|` encoding of section 6.5, and is never a `PropertyRef` |
+| `TypeRef`, `PropertyRef` | Records | Each wraps one IRI `String` (Q6). A property key is one IRI. A traversal key is the `\|`-joined encoding of section 6.5, and is never a `PropertyRef` |
 | `Audit` | Record | `Instant createdAt`, `String createdBy`, `Instant updatedAt`, `String updatedBy` (Q6) |
 | `Page` | Record | `int number`, `int size` (offset paging, #16 point 11) |
 | `Sort` | Record | `FieldPath path`, `Direction direction` |

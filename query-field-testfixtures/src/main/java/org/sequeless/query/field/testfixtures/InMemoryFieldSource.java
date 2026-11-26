@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -342,7 +343,7 @@ public final class InMemoryFieldSource implements FieldSource {
     private static List<Field> toFacets(List<PropertyFixture> rows) {
         List<Field> facets = new ArrayList<>(rows.size());
         for (PropertyFixture row : rows) {
-            FieldPath path = new FieldPath(List.of(new PathSegment(row.id(), row.slug(), null)));
+            FieldPath path = new FieldPath(List.of(new PathSegment(row.id(), row.iri(), row.slug(), null)));
             facets.add(new Field(
                     path,
                     row.type(),
@@ -438,6 +439,7 @@ public final class InMemoryFieldSource implements FieldSource {
     private static Relationship toRelationship(RelationshipFixture relationshipFixture, ClassFixture targetClass) {
         return new Relationship(
                 relationshipFixture.id(),
+                relationshipFixture.iri(),
                 relationshipFixture.slug(),
                 new LocalizedText(relationshipFixture.slug(), null),
                 toClassRef(targetClass),
@@ -450,7 +452,7 @@ public final class InMemoryFieldSource implements FieldSource {
         PathSegment bareSegment = facet.path().segments().get(0);
         List<PathSegment> fullSegments = new ArrayList<>(prefix.size() + 1);
         fullSegments.addAll(prefix);
-        fullSegments.add(new PathSegment(bareSegment.propertyId(), bareSegment.slug(), null));
+        fullSegments.add(new PathSegment(bareSegment.propertyId(), bareSegment.iri(), bareSegment.slug(), null));
         FieldPath fullPath = new FieldPath(fullSegments);
         return new Field(
                 fullPath,
@@ -568,7 +570,8 @@ public final class InMemoryFieldSource implements FieldSource {
          */
         public Builder property(String slug, FieldType type) {
             requireCurrentClassAndVersion();
-            currentProperty = new PropertyDraft(deriveId(currentClass.slug, slug), slug, type, currentVersion);
+            currentProperty = new PropertyDraft(
+                    deriveId(currentClass.slug, slug), deriveIri(currentClass.slug, slug), slug, type, currentVersion);
             currentClass.properties.add(currentProperty);
             currentRelationship = null;
             return this;
@@ -585,8 +588,12 @@ public final class InMemoryFieldSource implements FieldSource {
          */
         public Builder relationship(String slug, String targetClassSlug) {
             requireCurrentClassAndVersion();
-            currentRelationship =
-                    new RelationshipDraft(deriveId(currentClass.slug, slug), slug, targetClassSlug, currentVersion);
+            currentRelationship = new RelationshipDraft(
+                    deriveId(currentClass.slug, slug),
+                    deriveIri(currentClass.slug, slug),
+                    slug,
+                    targetClassSlug,
+                    currentVersion);
             currentClass.relationships.add(currentRelationship);
             currentProperty = null;
             return this;
@@ -718,8 +725,10 @@ public final class InMemoryFieldSource implements FieldSource {
 
         /**
          * Overrides the deterministically derived id of whichever of the current property or
-         * current relationship is active. This is how a fixture keeps one identity across a rename
-         * -- call {@code .id(SAME_UUID)} on both the old-slug draft and the new-slug draft.
+         * current relationship is active. A rename that must keep one identity calls both {@code
+         * id(sameUuid)} and {@code iri(sameIri)} on the old-slug draft and the new-slug draft: the
+         * id alone leaves each draft's IRI derived from its own slug, so the two rows would carry
+         * two different IRIs.
          *
          * @param id the id to use instead of the derived one; never {@code null}
          * @return {@code this}
@@ -731,6 +740,33 @@ public final class InMemoryFieldSource implements FieldSource {
                 currentRelationship.id = id;
             } else {
                 throw new IllegalStateException("id(UUID) requires an active property or relationship");
+            }
+            return this;
+        }
+
+        /**
+         * Overrides the derived IRI of whichever of the current property or current relationship is
+         * active. See {@link #id(UUID)} for the rename case, where both drafts must pass the same
+         * IRI.
+         *
+         * @param iri the IRI to use instead of the derived one; never {@code null}, blank, or
+         *     containing {@code '|'}
+         * @return {@code this}
+         */
+        public Builder iri(String iri) {
+            Objects.requireNonNull(iri, "iri must not be null");
+            if (iri.isBlank()) {
+                throw new IllegalArgumentException("iri must not be blank");
+            }
+            if (iri.contains("|")) {
+                throw new IllegalArgumentException("iri must not contain '|'");
+            }
+            if (currentProperty != null) {
+                currentProperty.iri = iri;
+            } else if (currentRelationship != null) {
+                currentRelationship.iri = iri;
+            } else {
+                throw new IllegalStateException("iri(String) requires an active property or relationship");
             }
             return this;
         }
@@ -803,6 +839,7 @@ public final class InMemoryFieldSource implements FieldSource {
                 }
                 result.add(new RelationshipFixture(
                         newest.id,
+                        newest.iri,
                         newest.slug,
                         newest.targetClassSlug,
                         newest.cardinality,
@@ -849,6 +886,16 @@ public final class InMemoryFieldSource implements FieldSource {
         private static UUID deriveId(String classSlug, String slug) {
             return UUID.nameUUIDFromBytes((classSlug + "." + slug).getBytes(StandardCharsets.UTF_8));
         }
+
+        /**
+         * Derives the IRI of a class member from its owning class's slug and its own slug, in the
+         * same {@code urn:ont:property:<Class>.<slug>} style {@link ContractFixtures} uses. Like
+         * {@link #deriveId(String, String)}, it is fixed at declaration time: {@link #id(UUID)}
+         * overrides the id only, and {@link #iri(String)} overrides the IRI.
+         */
+        private static String deriveIri(String classSlug, String slug) {
+            return "urn:ont:property:" + classSlug + "." + slug;
+        }
     }
 
     /**
@@ -875,6 +922,7 @@ public final class InMemoryFieldSource implements FieldSource {
     /** One version's declaration of one scalar property, mutated in place by the builder's suffix methods. */
     private static final class PropertyDraft {
         private UUID id;
+        private String iri;
         private final String slug;
         private final FieldType type;
         private final OntologyVersionRef definedInVersion;
@@ -888,8 +936,9 @@ public final class InMemoryFieldSource implements FieldSource {
         private ConceptSchemeRef conceptScheme;
         private final List<String> deniedOperators = new ArrayList<>();
 
-        private PropertyDraft(UUID id, String slug, FieldType type, OntologyVersionRef definedInVersion) {
+        private PropertyDraft(UUID id, String iri, String slug, FieldType type, OntologyVersionRef definedInVersion) {
             this.id = id;
+            this.iri = iri;
             this.slug = slug;
             this.type = type;
             this.definedInVersion = definedInVersion;
@@ -901,6 +950,7 @@ public final class InMemoryFieldSource implements FieldSource {
             OperatorRestriction restriction = new OperatorRestriction(List.of(), List.copyOf(deniedOperators));
             return new PropertyFixture(
                     id,
+                    iri,
                     slug,
                     type,
                     cardinality,
@@ -916,14 +966,17 @@ public final class InMemoryFieldSource implements FieldSource {
     /** One version's declaration of one relationship, mutated in place by the builder's suffix methods. */
     private static final class RelationshipDraft {
         private UUID id;
+        private String iri;
         private final String slug;
         private final String targetClassSlug;
         private final OntologyVersionRef definedInVersion;
         private boolean walkable;
         private Cardinality cardinality = Cardinality.SINGLE;
 
-        private RelationshipDraft(UUID id, String slug, String targetClassSlug, OntologyVersionRef definedInVersion) {
+        private RelationshipDraft(
+                UUID id, String iri, String slug, String targetClassSlug, OntologyVersionRef definedInVersion) {
             this.id = id;
+            this.iri = iri;
             this.slug = slug;
             this.targetClassSlug = targetClassSlug;
             this.definedInVersion = definedInVersion;
