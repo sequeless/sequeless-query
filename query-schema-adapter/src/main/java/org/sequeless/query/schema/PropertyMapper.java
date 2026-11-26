@@ -2,6 +2,7 @@ package org.sequeless.query.schema;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import org.sequeless.ontology.schema.api.AttributeDefinition;
 import org.sequeless.ontology.schema.api.Datatype;
 import org.sequeless.ontology.schema.api.PropertyDefinition;
@@ -95,11 +96,18 @@ final class PropertyMapper {
     }
 
     /**
-     * The capability defaults (Navigator decision Q16). Every property filters, facet and search follow
-     * the property's own flags, and sorting is off. Change a default here and nowhere else.
+     * The capability defaults. Every property filters, and facet and search follow the property's own
+     * flags. A property is sortable when it holds at most one value per object (cardinality max is
+     * present and equal to 1). This overrides Navigator decision Q16 for sort only, decided for the
+     * sequeless-prototype cut-over (spec 17). Change a default here and nowhere else.
      */
     private static Capabilities capabilities(PropertyDefinition property) {
-        return new Capabilities(true, property.facet(), property.searchable(), false);
+        return new Capabilities(true, property.facet(), property.searchable(), isSortable(property));
+    }
+
+    private static boolean isSortable(PropertyDefinition property) {
+        OptionalInt max = property.cardinality().max();
+        return max.isPresent() && max.getAsInt() == 1;
     }
 
     /** An attribute maps by its datatype; a relationship is an object reference (Navigator decision Q18). */

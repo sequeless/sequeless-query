@@ -90,6 +90,52 @@ class SchemaFieldSourceTest {
     }
 
     @Test
+    void sortableOnlyWhenCardinalityMaxIsExactlyOne() {
+        // Spec 17 (prototype cut-over): sortable when the cardinality max is present and equals 1.
+        // Zero, unbounded and ranges above one stay unsortable.
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        concreteType(
+                                "Person",
+                                attribute(
+                                        "atMostOne",
+                                        Datatype.INTEGER,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        true,
+                                        true),
+                                attribute(
+                                        "exactlyOne",
+                                        Datatype.INTEGER,
+                                        org.sequeless.ontology.schema.api.Cardinality.exactly(1),
+                                        true,
+                                        true),
+                                attribute(
+                                        "exactlyZero",
+                                        Datatype.INTEGER,
+                                        org.sequeless.ontology.schema.api.Cardinality.exactly(0),
+                                        true,
+                                        true),
+                                attribute(
+                                        "upToFive",
+                                        Datatype.INTEGER,
+                                        org.sequeless.ontology.schema.api.Cardinality.range(0, 5),
+                                        true,
+                                        true),
+                                attribute(
+                                        "unbounded",
+                                        Datatype.INTEGER,
+                                        org.sequeless.ontology.schema.api.Cardinality.optional(),
+                                        true,
+                                        true))),
+                "Person");
+
+        assertThat(scope.facets())
+                .extracting(field -> field.capabilities().sortable())
+                .containsExactly(true, true, false, false, false);
+    }
+
+    @Test
     void relationshipIsAnObjectReferenceWithATargetClassAndYieldsARelationshipRecord() {
         FieldScope scope = resolve(
                 schema(
