@@ -60,14 +60,6 @@ final class PathWalk {
     }
 
     /**
-     * @param segment a segment of the walked path
-     * @return the relationship the segment names on the current class, or empty if it names none
-     */
-    Optional<RelationshipDefinition> relationship(PathSegment segment) {
-        return find(segment).filter(RelationshipDefinition.class::isInstance).map(RelationshipDefinition.class::cast);
-    }
-
-    /**
      * Guard 3: the hop at {@code index} (zero-based) must not go deeper than {@code maxDepth}.
      *
      * @param index the position of the hop in the path

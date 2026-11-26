@@ -87,14 +87,24 @@ public final class SchemaFieldSource implements FieldSource {
         requireActiveVersion(view, request.versionPolicy());
         PropertyMapper mapper = new PropertyMapper(view);
         PathWalk walk = new PathWalk(view, start, request.traversal(), relationship);
+        List<TypeDefinition> covered = view.typeAndSubtypes(start);
 
         List<PathSegment> segments = relationship.segments();
         for (int index = 0; index < segments.size(); index++) {
             PathSegment segment = segments.get(index);
+            List<PropertyDefinition> definitions = definitionsAt(walk, mapper, covered, index, segment);
             // A segment with no target class is a literal end, which cannot be walked into.
-            RelationshipDefinition edge = walk.relationship(segment)
-                    .filter(ignored -> segment.targetClass() != null)
-                    .orElseThrow(() -> new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, relationship));
+            if (definitions.isEmpty() || segment.targetClass() == null) {
+                throw new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, relationship);
+            }
+            // Definitions that disagree name no single target, so no route can be walked through them.
+            if (!PropertyMapper.agree(definitions)) {
+                throw new FieldResolutionException(
+                        FieldErrorCode.CLASS_NOT_REACHABLE, relationship, segment.targetClass());
+            }
+            if (!(definitions.get(0) instanceof RelationshipDefinition edge)) {
+                throw new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, relationship);
+            }
             walk.checkRevisit(view.targetRef(edge.targetTypeIri()));
             walk.checkDepth(index);
             walk.enter(edge);
@@ -129,11 +139,7 @@ public final class SchemaFieldSource implements FieldSource {
         for (int index = 0; index <= last; index++) {
             PathSegment segment = segments.get(index);
             boolean terminal = index == last;
-            // The root hop reads the same definitions resolve reads (spec 17), so describe and resolve return the
-            // same Field for a root's property. A deeper hop reads only the class the walk has entered.
-            List<PropertyDefinition> definitions = index == 0
-                    ? mapper.groupNamed(covered, segment)
-                    : walk.find(segment).stream().toList();
+            List<PropertyDefinition> definitions = definitionsAt(walk, mapper, covered, index, segment);
             if (definitions.isEmpty()) {
                 throw terminal
                         ? new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, path)
@@ -184,6 +190,19 @@ public final class SchemaFieldSource implements FieldSource {
             throw unknown;
         }
         return new SchemaView(schema);
+    }
+
+    /**
+     * The definitions a path segment names on the class the walk is at, empty when none does. The root hop
+     * (index 0) reads the union of the root's and its subtypes' definitions, as resolve() does (spec 17), so
+     * describe() and expand() agree with resolve() on a root's properties. A deeper hop reads only the class
+     * the walk has entered.
+     */
+    private static List<PropertyDefinition> definitionsAt(
+            PathWalk walk, PropertyMapper mapper, List<TypeDefinition> covered, int index, PathSegment segment) {
+        return index == 0
+                ? mapper.groupNamed(covered, segment)
+                : walk.find(segment).stream().toList();
     }
 
     private static TypeDefinition root(SchemaView view, ClassRef root) {

@@ -852,6 +852,36 @@ class SchemaFieldSourceTest {
                 FieldErrorCode.CLASS_NOT_REACHABLE);
     }
 
+    @Test
+    void expandFromAnAbstractRootWalksASubtypeOnlyRelationship() {
+        FieldSource source = source(schema(
+                1,
+                type("Work", true, List.of()),
+                type("Task", false, List.of("Work"), relationship("assignee", "Person")),
+                concreteType("Person", attribute("name", Datatype.STRING, true, true))));
+        FieldScope root = source.resolve(request("Work"));
+
+        FieldScope expanded = source.expand(root, path(segment("assignee", "Person")));
+
+        assertThat(expanded.facets()).hasSize(root.facets().size() + 1);
+        assertThat(facetNamed(expanded, "assignee.name").type()).isEqualTo(FieldType.STRING);
+    }
+
+    @Test
+    void expandThroughADisagreeingRelationshipAtTheRootHopIsRefusedAndPicksNoTarget() {
+        FieldSource source = source(schema(
+                1,
+                type("Work", true, List.of()),
+                type("A", false, List.of("Work"), relationship("owner", "Person")),
+                type("B", false, List.of("Work"), relationship("owner", "Company")),
+                concreteType("Person", attribute("name", Datatype.STRING, true, true)),
+                concreteType("Company", attribute("name", Datatype.STRING, true, true))));
+        FieldScope root = source.resolve(request("Work"));
+
+        assertCode(() -> source.expand(root, path(segment("owner", "Person"))), FieldErrorCode.CLASS_NOT_REACHABLE);
+        assertCode(() -> source.expand(root, path(segment("owner", "Company"))), FieldErrorCode.CLASS_NOT_REACHABLE);
+    }
+
     private static FieldSource source(Schema schema) {
         return new SchemaFieldSource(new FakeSchemaSource(Map.of(TENANT, schema)));
     }
