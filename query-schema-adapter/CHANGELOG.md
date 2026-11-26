@@ -3,6 +3,13 @@
 * The following workspace dependencies were updated
     * org.sequeless:query-field bumped to 0.1.1
 
+## [0.2.3](https://github.com/sequeless/sequeless-query/compare/query-schema-adapter-v0.2.2...query-schema-adapter-v0.2.3) (2026-11-26)
+
+
+### Bug Fixes
+
+* **query:** a root's scope includes its subtypes' properties (spec 17, sequeless-prototype [#45](https://github.com/sequeless/sequeless-query/issues/45)) ([#24](https://github.com/sequeless/sequeless-query/issues/24)) ([c231973](https://github.com/sequeless/sequeless-query/commit/c2319738550c022337bca022233a8636eea40179))
+
 ## [0.2.2](https://github.com/sequeless/sequeless-query/compare/query-schema-adapter-v0.2.1...query-schema-adapter-v0.2.2) (2026-11-26)
 
 
