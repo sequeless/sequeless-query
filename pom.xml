@@ -27,6 +27,7 @@
     <module>query-core</module>
     <module>query-schema-adapter</module>
     <module>query-testkit</module>
+    <module>query-postgres-jsonb-adapter</module>
   </modules>
 
   <repositories>
