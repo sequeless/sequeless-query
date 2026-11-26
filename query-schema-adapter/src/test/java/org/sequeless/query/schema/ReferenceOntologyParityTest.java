@@ -31,7 +31,7 @@ import org.sequeless.query.field.api.FieldScope;
 
 /**
  * Parity of per-property usability (sort, filter, facet) over the prototype's reference ontology, for its two
- * abstract roots (Navigator parity check).
+ * abstract roots.
  *
  * <p>The ontology is {@code sequeless-app/src/main/resources/ontology/reference.ttl} in sequeless-prototype. It is
  * built here rather than loaded, because loading a TTL needs the Jena adapter, which this module does not depend

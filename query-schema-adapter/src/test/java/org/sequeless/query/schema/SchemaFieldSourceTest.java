@@ -619,7 +619,7 @@ class SchemaFieldSourceTest {
 
     @Test
     void aRootsOwnPropertyStaysSortableWhenASubtypeNarrowsItsCardinality() {
-        // Root wins (Navigator decision): the root declares "title" as single-valued; a subtype narrows it
+        // Root wins: the root declares "title" as single-valued; a subtype narrows it
         // to exactly one. The root's copy is the Field, so it stays sortable and is not a conflict. Against the
         // any-copy rule, the two cardinalities disagree and the Field would be the unusable conflict Field.
         FieldScope scope = resolve(

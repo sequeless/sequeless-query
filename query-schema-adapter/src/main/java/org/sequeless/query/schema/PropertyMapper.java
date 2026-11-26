@@ -203,11 +203,11 @@ final class PropertyMapper {
     }
 
     /**
-     * The property definitions the root's scope groups, by property IRI, in first-declared order. The root wins
-     * (Navigator decision): an IRI the root's own list declares, inherited copies included, is grouped
-     * from the root's copy alone, so a subtype's copy of it, even a narrowed one, is not part of the scope. Only
-     * an IRI the root does not declare is grouped across the subtypes, where its copies must agree to be usable.
-     * {@code covered} comes root first, as {@link SchemaView#typeAndSubtypes} returns it.
+     * The property definitions the root's scope groups, by property IRI, in first-declared order. The root wins: an IRI
+     * the root's own list declares, inherited copies included, is grouped from the root's copy alone, so a subtype's
+     * copy of it, even a narrowed one, is not part of the scope. Only an IRI the root does not declare is grouped
+     * across the subtypes, where its copies must agree to be usable. {@code covered} comes root first, as {@link
+     * SchemaView#typeAndSubtypes} returns it.
      */
     private static List<List<PropertyDefinition>> groupByIri(List<TypeDefinition> covered) {
         TypeDefinition root = covered.get(0);
@@ -258,7 +258,7 @@ final class PropertyMapper {
     /**
      * The capability defaults. Every property filters, and facet and search follow the property's own
      * flags. A property is sortable when it holds at most one value per object (cardinality max is
-     * present and equal to 1). This overrides Navigator decision Q16 for sort only, decided for the
+     * present and equal to 1). This overrides an earlier rule for sort only, decided for the
      * sequeless-prototype cut-over. Change a default here and nowhere else.
      *
      * <p>Over several agreeing definitions (subtypes), facet and search hold only when every
@@ -279,7 +279,7 @@ final class PropertyMapper {
         return max.isPresent() && max.getAsInt() == 1;
     }
 
-    /** An attribute maps by its datatype; a relationship is an object reference (Navigator decision Q18). */
+    /** An attribute maps by its datatype; a relationship is an object reference. */
     static FieldType fieldType(PropertyDefinition property) {
         return switch (property) {
             case AttributeDefinition attribute -> fieldType(attribute.datatype());

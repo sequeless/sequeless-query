@@ -83,7 +83,7 @@ final class SchemaView {
     }
 
     /**
-     * The root and every concrete subtype of it (Navigator decision Q15). The root is included only
+     * The root and every concrete subtype of it. The root is included only
      * when it is concrete itself. An abstract root with no concrete subtypes yields an empty set.
      *
      * @param root a type of this Schema
