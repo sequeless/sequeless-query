@@ -107,6 +107,42 @@ final class FieldExpressions {
         return new SqlExpression(sqlOf(field), List.of());
     }
 
+    /**
+     * The SQL text of a facet bucket's value for {@code field}, as a parenthesised expression over {@code sq_object}. It
+     * writes the value as the in-memory reference does (spec 14, Q21 and Q25), so the bucket text is the same whichever
+     * adapter answers:
+     *
+     * <ul>
+     *   <li>a {@code DATE} is its ISO day, {@code yyyy-MM-dd}, as {@code LocalDate.toString} writes it;
+     *   <li>a {@code DATETIME} is {@code Instant.toString}: whole seconds, a {@code Z}, and a fraction only when there is
+     *       one, of three digits (whole milliseconds) or six (otherwise);
+     *   <li>every other type is its {@link #sqlOf expression} as text.
+     * </ul>
+     *
+     * @param field a Field; must not be {@code null}
+     * @return the bucket text expression, with no bind parameters
+     * @throws InvalidQueryException as {@link #sqlOf(Field)}
+     */
+    static String bucketTextOf(Field field) {
+        String expression = sqlOf(field);
+        return switch (field.type()) {
+            case DATE -> "(to_char(" + expression + ", 'YYYY-MM-DD'))";
+            case DATETIME -> instantText(expression);
+            default -> "((" + expression + ")::text)";
+        };
+    }
+
+    /** The {@code Instant.toString} form of a {@code timestamptz} expression, in UTC, as one parenthesised expression. */
+    private static String instantText(String expression) {
+        String utc = "((" + expression + ") AT TIME ZONE 'UTC')";
+        String micros = "to_char(" + utc + ", 'US')";
+        return "(to_char(" + utc + ", 'YYYY-MM-DD\"T\"HH24:MI:SS')"
+                + " || CASE WHEN " + micros + " = '000000' THEN '' WHEN right(" + micros
+                + ", 3) = '000' THEN '.' || left("
+                + micros + ", 3) ELSE '.' || " + micros + " END"
+                + " || 'Z')";
+    }
+
     /** A single-quoted SQL string literal, with each embedded single quote doubled. */
     static String literal(String text) {
         return "'" + text.replace("'", "''") + "'";

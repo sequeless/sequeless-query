@@ -44,6 +44,8 @@ class BoundaryRulesTest {
                     "org.sequeless.kernel.identity..",
                     "org.sequeless.kernel.values..",
                     "org.springframework..",
-                    "org.flywaydb..")
-            .as("the adapter depends on the JDK, the Query and filter packages it declares, Spring JDBC and Flyway");
+                    "org.flywaydb..",
+                    "tools.jackson..")
+            .as("the adapter depends on the JDK, the Query and filter packages it declares, Spring JDBC, Flyway and "
+                    + "Jackson 3 (the props decoder, as the prototype's ValueJsonCodec)");
 }

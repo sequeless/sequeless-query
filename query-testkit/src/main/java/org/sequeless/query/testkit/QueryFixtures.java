@@ -1,6 +1,8 @@
 package org.sequeless.query.testkit;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -34,10 +36,13 @@ import org.sequeless.query.field.testfixtures.RelationshipFixture;
  * {@code belongsToProject}, which only expansion reaches.
  * Scopes are resolved through {@link InMemoryFieldSource}, so the Fields are the ones the Field
  * contract produces, not hand-built records.
+ *
+ * <p>Public, so an adapter's own IT can prepare its index over the same root Fields the contract queries
+ * ({@link #rootFields}). The contract methods still use it from this package.
  */
-final class QueryFixtures {
+public final class QueryFixtures {
 
-    static final TenantId TENANT = new TenantId("query-testkit");
+    public static final TenantId TENANT = new TenantId("query-testkit");
     static final TenantId OTHER_TENANT = new TenantId("other-tenant");
     static final OntologyVersionRef V1 = new OntologyVersionRef(1);
 
@@ -174,7 +179,7 @@ final class QueryFixtures {
      * @param tenant the tenant the scope is resolved for
      * @return the resolved scope
      */
-    static FieldScope taskScope(TenantId tenant) {
+    public static FieldScope taskScope(TenantId tenant) {
         return resolve(tenant, TASK);
     }
 
@@ -248,6 +253,24 @@ final class QueryFixtures {
         FieldPath path = new FieldPath(List.of(new PathSegment(
                 relationship.propertyId(), relationship.iri(), relationship.slug(), relationship.targetClass())));
         return source.expand(scope, path);
+    }
+
+    /**
+     * The root Fields of every class of the scenario, keyed by root class, in the form
+     * {@code IndexPreparationPort.prepare} takes. Each root's Fields are the ones its own scope resolves.
+     *
+     * @param tenant the tenant the roots are resolved for
+     * @return one entry per root class, in Task, Project, Person order
+     */
+    public static Map<ClassRef, List<Field>> rootFields(TenantId tenant) {
+        ContractFixture fixture = fixture(tenant);
+        InMemoryFieldSource source = InMemoryFieldSource.from(fixture);
+        Map<ClassRef, List<Field>> roots = new LinkedHashMap<>();
+        for (String slug : List.of(TASK, PROJECT, PERSON)) {
+            ClassRef root = classRef(fixture, slug);
+            roots.put(root, source.resolve(request(tenant, root)).facets());
+        }
+        return roots;
     }
 
     static FieldScope withConcreteTypes(FieldScope scope, Set<ClassRef> concreteTypes) {

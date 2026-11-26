@@ -26,7 +26,9 @@
     <spring-boot.version>4.1.1</spring-boot.version>
     <filter-core.version>0.1.5</filter-core.version>
     <filter-sql-adapter.version>0.1.5</filter-sql-adapter.version>
+    <filter-sql-postgres-adapter.version>0.1.1</filter-sql-postgres-adapter.version>
     <kernel-identity.version>0.1.1</kernel-identity.version>
+    <kernel-values.version>0.1.1</kernel-values.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <postgresql.version>42.7.14</postgresql.version>
     <assertj.version>3.27.7</assertj.version>
@@ -51,8 +53,8 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- filter-sql-adapter 0.1.5 brings filter-core 0.1.4 transitively, and query-core needs 0.1.5. Managing it here
-           makes every path resolve the release this module declares, so the enforcer's convergence rule holds. -->
+      <!-- filter-sql-adapter 0.1.5 and filter-sql-postgres-adapter 0.1.1 bring filter-core 0.1.4 transitively. Managing it
+           here makes them resolve the release this module declares, so the enforcer's convergence rule holds. -->
       <dependency>
         <groupId>org.sequeless</groupId>
         <artifactId>filter-core</artifactId>
@@ -76,13 +78,34 @@
     </dependency>
     <dependency>
       <groupId>org.sequeless</groupId>
+      <artifactId>filter-core</artifactId>
+      <version>${filter-core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
       <artifactId>filter-sql-adapter</artifactId>
       <version>${filter-sql-adapter.version}</version>
     </dependency>
     <dependency>
       <groupId>org.sequeless</groupId>
+      <artifactId>filter-sql-postgres-adapter</artifactId>
+      <version>${filter-sql-postgres-adapter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
       <artifactId>kernel-identity</artifactId>
       <version>${kernel-identity.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>kernel-values</artifactId>
+      <version>${kernel-values.version}</version>
+    </dependency>
+    <!-- Jackson 3 (tools.jackson), as the prototype's ValueJsonCodec: sq_object.props is decoded into kernel Values,
+         and a list-tagged value needs a real JSON parser. The version comes from the Spring Boot BOM. -->
+    <dependency>
+      <groupId>tools.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
