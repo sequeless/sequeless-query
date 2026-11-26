@@ -12,7 +12,7 @@
 
   <groupId>org.sequeless</groupId>
   <artifactId>query-testkit</artifactId>
-  <version>0.2.0</version>
+  <version>0.2.1</version>
   <name>query-testkit</name>
   <description>Contract tests and in-memory references for the Query ports: BrowsePort, ReadPort and IndexPreparationPort (spec 14, section 7.3)</description>
 
@@ -53,7 +53,7 @@
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>query-core</artifactId>
-      <version>0.2.0</version>
+      <version>0.2.1</version>
     </dependency>
     <dependency>
       <groupId>org.sequeless</groupId>
