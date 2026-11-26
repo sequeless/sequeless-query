@@ -74,10 +74,11 @@ import org.sequeless.query.spi.BrowsePort;
  *
  * <p>Three clauses of {@link BrowsePort} are pinned with fixtures here. A reference facet bucket
  * drops a missing or soft-deleted target (spec 14, Q21). Free text is matched against the root's own
- * searchable Fields, and a traversal Field that an expansion adds is not searched (Q22). A filter
- * shape the port does not evaluate is rejected with {@link InvalidQueryException}, for AnyFilter, a
- * traversal path, {@code like} and {@code not like} (Q23). Free text does not reach a property that
- * is searchable only on a concrete subtype. That is a documented limit, so it is not pinned here.
+ * searchable Fields, and a traversal Field that an expansion adds is not searched (Q22). A filter,
+ * sort or facet shape the port does not evaluate is rejected with {@link InvalidQueryException}: AnyFilter,
+ * a traversal path used as a filter, sort or facet path, {@code like} and {@code not like} (Q23). Free text
+ * does not reach a property that is searchable only on a concrete subtype. That is a documented limit, so it
+ * is not pinned here.
  */
 public abstract class BrowseContract {
 
@@ -251,10 +252,13 @@ public abstract class BrowseContract {
     @Test
     void traversalPathFilterIsRejectedAsInvalidQuery() {
         Environment env = freshEnvironment();
-        FieldScope scope = QueryFixtures.taskScope(TENANT);
+        // belongsToProject|projectName is a real, filterable traversal Field of the expanded scope, so only its shape
+        // is rejected.
+        FieldScope scope = QueryFixtures.taskScopeExpandedToProject(TENANT);
         seedTask(env, BASE, "A task", "OPEN", 1, FEB_1, null, null);
 
-        assertRejectedAsInvalidQuery(env, scope, is(ASSIGNED_TO_IRI + "|" + PERSON_NAME_IRI, text("Alice Smith")));
+        assertRejectedAsInvalidQuery(
+                env, scope, is(BELONGS_TO_PROJECT_IRI + "|" + PROJECT_NAME_IRI, text("Budget project")));
     }
 
     @Test
@@ -446,6 +450,18 @@ public abstract class BrowseContract {
                 .containsExactly(closedHigh, closedLow, openHigh, openLow);
     }
 
+    @Test
+    void traversalSortIsRejectedAsInvalidQuery() {
+        Environment env = freshEnvironment();
+        FieldScope scope = QueryFixtures.taskScopeExpandedToProject(TENANT);
+        seedTask(env, BASE, "A task", "OPEN", 1, FEB_1, null, null);
+
+        // belongsToProject.status is a sortable traversal Field of the expanded scope, so only its shape is rejected.
+        FieldPath projectStatus = QueryFixtures.facetPath(scope, "belongsToProject.status");
+        assertRejectedAsInvalidQuery(
+                env, scope, withSorts(List.of(new Sort(projectStatus, Direction.ASC)), new Page(0, 20)));
+    }
+
     // -- Soft delete and tenant scope -------------------------------------------------------------
 
     @Test
@@ -548,18 +564,19 @@ public abstract class BrowseContract {
     }
 
     @Test
-    void searchableTraversalFieldDoesNotBreakBrowse() {
+    void textSearchReadsOnlyTheRootsSearchableFields() {
         Environment env = freshEnvironment();
-        // The expansion adds the Project's searchable name to the scope as a traversal Field. Project is
-        // not a candidate type of this scope, and only the root's own searchable Fields are searched.
+        // The expansion adds the Project's searchable name to the scope as a traversal Field. Text search reads only
+        // the root's own searchable Fields (Q22), so the name of the Project a task belongs to does not match the task.
         FieldScope expanded = QueryFixtures.taskScopeExpandedToProject(TENANT);
 
-        ObjectId task = seedTask(env, BASE, "Quarterly budget", "OPEN", 1, FEB_1, null, null);
-        seedProject(env, BASE.plusSeconds(1), "Budget project", "ACTIVE");
+        ObjectId budgetProject = seedProject(env, BASE, "Budget project", "ACTIVE");
+        ObjectId titled = seedTask(env, BASE.plusSeconds(1), "Quarterly budget", "OPEN", 1, FEB_1, null, null);
+        ObjectId linked = seedTask(env, BASE.plusSeconds(2), "Linked task", "OPEN", 2, FEB_2, null, budgetProject);
 
-        assertThat(browseIds(env, expanded, plain(new Page(0, 20)))).containsExactly(task);
+        assertThat(browseIds(env, expanded, plain(new Page(0, 20)))).containsExactly(titled, linked);
         assertThat(browseIds(env, expanded, textQuery("budget", new Page(0, 20))))
-                .containsExactly(task);
+                .containsExactly(titled);
     }
 
     // -- Facets -----------------------------------------------------------------------------------
@@ -796,11 +813,27 @@ public abstract class BrowseContract {
         assertThat(result.facets().get(assignedTo)).containsExactly(new FacetBucket(idText(alice), 2));
     }
 
+    @Test
+    void traversalFacetIsRejectedAsInvalidQuery() {
+        Environment env = freshEnvironment();
+        FieldScope scope = QueryFixtures.taskScopeExpandedToProject(TENANT);
+        seedTask(env, BASE, "A task", "OPEN", 1, FEB_1, null, null);
+
+        // belongsToProject.status is a facetable traversal Field of the expanded scope, so only its shape is rejected.
+        FieldPath projectStatus = QueryFixtures.facetPath(scope, "belongsToProject.status");
+        assertRejectedAsInvalidQuery(env, scope, withFacets(new Page(0, 20), List.of(projectStatus)));
+    }
+
     // -- Fixture helpers --------------------------------------------------------------------------
 
     /** The filter is rejected before anything is read, with at least one problem named. */
     private static void assertRejectedAsInvalidQuery(Environment env, FieldScope scope, FilterNode filter) {
-        assertThatThrownBy(() -> env.browsePort().browse(scope, filtered(filter, new Page(0, 20))))
+        assertRejectedAsInvalidQuery(env, scope, filtered(filter, new Page(0, 20)));
+    }
+
+    /** The query is rejected before anything is read, with at least one problem named. */
+    private static void assertRejectedAsInvalidQuery(Environment env, FieldScope scope, BrowseQuery query) {
+        assertThatThrownBy(() -> env.browsePort().browse(scope, query))
                 .isInstanceOfSatisfying(
                         InvalidQueryException.class,
                         error -> assertThat(error.problems()).isNotEmpty());

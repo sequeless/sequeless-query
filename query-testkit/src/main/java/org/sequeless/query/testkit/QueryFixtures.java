@@ -144,7 +144,7 @@ final class QueryFixtures {
                                 PROJECT_STATUS_IRI,
                                 "status",
                                 FieldType.STRING,
-                                FILTERABLE_FACETABLE)),
+                                FILTERABLE_FACETABLE_SORTABLE)),
                 List.of());
         ClassFixture person = new ClassFixture(
                 PERSON_ID,
@@ -214,10 +214,11 @@ final class QueryFixtures {
     }
 
     /**
-     * The FieldPath of a direct facet Field of the scope.
+     * The FieldPath of a facet Field of the scope, by its slug path: {@code "status"} for a direct Field,
+     * {@code "belongsToProject.status"} for a traversal Field.
      *
      * @param scope the scope
-     * @param slug the Field's slug
+     * @param slug the Field's slug path
      * @return the path
      */
     static FieldPath facetPath(FieldScope scope, String slug) {
