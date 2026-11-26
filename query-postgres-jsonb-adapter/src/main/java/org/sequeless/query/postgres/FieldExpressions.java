@@ -21,8 +21,8 @@ import org.sequeless.query.field.api.FieldType;
  *
  * <p>The JSON key per type is the tag the prototype's writer stores for the value's kind (its {@code
  * ValueJsonCodec}): {@code text}, {@code integer}, {@code decimal}, {@code bool}, {@code date}, {@code dateTime}
- * and {@code ref}. IRI references, concept references, times and durations are stored as text values, because
- * the kernel value types have no variant for them.
+ * and {@code ref}. Language-tagged strings, IRI references, concept references, times and durations are stored as
+ * text values and read with the JSON key {@code text} and no cast (spec 14, Q25).
  */
 final class FieldExpressions {
 
