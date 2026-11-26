@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.sequeless.filter.api.FilterNode;
 import org.sequeless.filter.api.Filters;
@@ -41,6 +40,7 @@ import org.sequeless.query.api.BrowseQuery;
 import org.sequeless.query.api.BrowseResult;
 import org.sequeless.query.api.Direction;
 import org.sequeless.query.api.FacetBucket;
+import org.sequeless.query.api.FieldKey;
 import org.sequeless.query.api.InvalidQueryException;
 import org.sequeless.query.api.ObjectView;
 import org.sequeless.query.api.Page;
@@ -48,7 +48,6 @@ import org.sequeless.query.api.PropertyRef;
 import org.sequeless.query.api.Sort;
 import org.sequeless.query.field.api.FieldPath;
 import org.sequeless.query.field.api.FieldScope;
-import org.sequeless.query.field.api.PathSegment;
 import org.sequeless.query.spi.BrowsePort;
 
 /**
@@ -263,16 +262,10 @@ public abstract class BrowseContract {
         // fails the lookup and a hand-built key cannot pass the test.
         FieldPath projectName = QueryFixtures.facetPath(scope, "belongsToProject.name");
         assertThat(projectName.isTraversing()).isTrue();
-        String key = projectName.segments().stream().map(PathSegment::iri).collect(Collectors.joining("|"));
+        String key = FieldKey.encode(projectName);
 
-        assertThatThrownBy(() ->
-                        env.browsePort().browse(scope, filtered(is(key, text("Budget project")), new Page(0, 20))))
-                .isInstanceOfSatisfying(InvalidQueryException.class, error -> {
-                    assertThat(error.problems()).isNotEmpty();
-                    // The rejection names the traversal path, so it is not an unknown-path rejection.
-                    assertThat(error.problems())
-                            .anySatisfy(problem -> assertThat(problem).contains(key));
-                });
+        // The rejection names the traversal path, so it is not an unknown-path rejection.
+        assertRejectedNamingKey(env, scope, filtered(is(key, text("Budget project")), new Page(0, 20)), key);
     }
 
     @Test
@@ -281,7 +274,8 @@ public abstract class BrowseContract {
         FieldScope scope = QueryFixtures.taskScope(TENANT);
         seedTask(env, BASE, "A task", "OPEN", 1, FEB_1, null, null);
 
-        assertRejectedAsInvalidQuery(env, scope, Filters.field(TITLE_IRI, "like", text("A%")));
+        assertRejectedNamingKey(
+                env, scope, filtered(Filters.field(TITLE_IRI, "like", text("A%")), new Page(0, 20)), TITLE_IRI);
     }
 
     @Test
@@ -290,7 +284,8 @@ public abstract class BrowseContract {
         FieldScope scope = QueryFixtures.taskScope(TENANT);
         seedTask(env, BASE, "A task", "OPEN", 1, FEB_1, null, null);
 
-        assertRejectedAsInvalidQuery(env, scope, Filters.field(TITLE_IRI, "not like", text("A%")));
+        assertRejectedNamingKey(
+                env, scope, filtered(Filters.field(TITLE_IRI, "not like", text("A%")), new Page(0, 20)), TITLE_IRI);
     }
 
     // -- Sort and default order -------------------------------------------------------------------
@@ -472,8 +467,11 @@ public abstract class BrowseContract {
 
         // belongsToProject.status is a sortable traversal Field of the expanded scope, so only its shape is rejected.
         FieldPath projectStatus = QueryFixtures.facetPath(scope, "belongsToProject.status");
-        assertRejectedAsInvalidQuery(
-                env, scope, withSorts(List.of(new Sort(projectStatus, Direction.ASC)), new Page(0, 20)));
+        assertRejectedNamingKey(
+                env,
+                scope,
+                withSorts(List.of(new Sort(projectStatus, Direction.ASC)), new Page(0, 20)),
+                FieldKey.encode(projectStatus));
     }
 
     // -- Soft delete and tenant scope -------------------------------------------------------------
@@ -828,6 +826,35 @@ public abstract class BrowseContract {
     }
 
     @Test
+    void referenceFacetDropsTargetsOfAnotherTenant() {
+        Environment env = freshEnvironment();
+        FieldScope scope = QueryFixtures.taskScope(TENANT);
+
+        // A Person in another tenant: the tenant's browse must not bucket it, though the task that names it still
+        // counts.
+        ObjectId otherTenantPerson = ObjectId.random();
+        env.seeder()
+                .seed(ObjectViews.of(
+                        otherTenantPerson,
+                        PERSON_IRI,
+                        OTHER_TENANT,
+                        1,
+                        Map.of(PERSON_NAME, Value.text("Olivia Other"), PERSON_EMAIL, Value.text("olivia@example.com")),
+                        BASE,
+                        false));
+        ObjectId alice = seedPerson(env, ObjectId.random(), BASE.plusSeconds(1), "Alice Smith", "alice@example.com");
+
+        seedTask(env, BASE.plusSeconds(2), "Alice task", "OPEN", 1, FEB_1, alice, null);
+        seedTask(env, BASE.plusSeconds(3), "Other tenant's person task", "OPEN", 2, FEB_2, otherTenantPerson, null);
+
+        FieldPath assignedTo = QueryFixtures.facetPath(scope, "assignedTo");
+        BrowseResult result = env.browsePort().browse(scope, withFacets(new Page(0, 20), List.of(assignedTo)));
+
+        assertThat(result.total()).isEqualTo(2);
+        assertThat(result.facets().get(assignedTo)).containsExactly(new FacetBucket(idText(alice), 1));
+    }
+
+    @Test
     void traversalFacetIsRejectedAsInvalidQuery() {
         Environment env = freshEnvironment();
         FieldScope scope = QueryFixtures.taskScopeExpandedToProject(TENANT);
@@ -835,7 +862,8 @@ public abstract class BrowseContract {
 
         // belongsToProject.status is a facetable traversal Field of the expanded scope, so only its shape is rejected.
         FieldPath projectStatus = QueryFixtures.facetPath(scope, "belongsToProject.status");
-        assertRejectedAsInvalidQuery(env, scope, withFacets(new Page(0, 20), List.of(projectStatus)));
+        assertRejectedNamingKey(
+                env, scope, withFacets(new Page(0, 20), List.of(projectStatus)), FieldKey.encode(projectStatus));
     }
 
     // -- Fixture helpers --------------------------------------------------------------------------
@@ -851,6 +879,18 @@ public abstract class BrowseContract {
                 .isInstanceOfSatisfying(
                         InvalidQueryException.class,
                         error -> assertThat(error.problems()).isNotEmpty());
+    }
+
+    /**
+     * The query is rejected before anything is read, and at least one problem contains {@code key}: the rejection names the
+     * key it refuses, not only that something was refused.
+     */
+    private static void assertRejectedNamingKey(Environment env, FieldScope scope, BrowseQuery query, String key) {
+        assertThatThrownBy(() -> env.browsePort().browse(scope, query))
+                .isInstanceOfSatisfying(
+                        InvalidQueryException.class,
+                        error -> assertThat(error.problems())
+                                .anySatisfy(problem -> assertThat(problem).contains(key)));
     }
 
     private static BrowseQuery plain(Page page) {

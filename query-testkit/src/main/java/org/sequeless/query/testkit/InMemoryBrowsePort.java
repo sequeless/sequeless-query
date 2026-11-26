@@ -39,6 +39,7 @@ import org.sequeless.query.api.BrowseQuery;
 import org.sequeless.query.api.BrowseResult;
 import org.sequeless.query.api.Direction;
 import org.sequeless.query.api.FacetBucket;
+import org.sequeless.query.api.FieldKey;
 import org.sequeless.query.api.InvalidQueryException;
 import org.sequeless.query.api.ObjectView;
 import org.sequeless.query.api.PropertyRef;
@@ -323,7 +324,7 @@ public final class InMemoryBrowsePort implements BrowsePort {
 
     private static void collectPathProblem(FieldPath path, String role, List<String> problems) {
         if (path.segments().size() != 1) {
-            problems.add(role + " on traversal path " + path.asSlugPath()
+            problems.add(role + " on traversal path " + FieldKey.encode(path)
                     + " is not evaluated by the in-memory browse port");
         }
     }

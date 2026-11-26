@@ -14,7 +14,7 @@
   <artifactId>query-postgres-jsonb-adapter</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <name>query-postgres-jsonb-adapter</name>
-  <description>PostgreSQL JSONB adapter for the Query side: the Field-to-SQL expressions, the filter FieldResolver, index preparation and the Query migrations (spec 14, section 6.4)</description>
+  <description>PostgreSQL JSONB adapter for the Query side: the Field-to-SQL expressions, the filter FieldResolver, the browse port, index preparation and the Query migrations (spec 14, section 6.4)</description>
 
   <properties>
     <!-- Matches query-core: this module reads query-core and query-field classes compiled for 25. -->
@@ -106,6 +106,13 @@
     <dependency>
       <groupId>tools.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <!-- Jackson 2 (com.fasterxml), which filter-core's FieldFilter operands are. Only the tests build them, so the module
+         declares it for test scope rather than leaning on the transitive compile dependency. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>

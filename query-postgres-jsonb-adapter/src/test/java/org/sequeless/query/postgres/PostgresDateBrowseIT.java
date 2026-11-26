@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.sequeless.query.postgres.TestFields.classRef;
 import static org.sequeless.query.postgres.TestFields.direct;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -12,6 +13,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.sequeless.filter.api.FilterNode;
+import org.sequeless.filter.api.Filters;
 import org.sequeless.kernel.identity.TenantId;
 import org.sequeless.kernel.values.ObjectId;
 import org.sequeless.kernel.values.Value;
@@ -158,6 +161,28 @@ class PostgresDateBrowseIT extends AbstractPostgresIT {
                 .containsExactly(early, middle, late);
         assertThat(ids(browse(sorted(new Sort(SHIPPED_AT.path(), Direction.DESC)))))
                 .containsExactly(late, middle, early);
+    }
+
+    /**
+     * A gte and an lte on the DATETIME Field: the {@code ::timestamptz} comparison and the {@code Timestamp} binding of
+     * {@link ValueConverter}, which no other IT exercises. Two rows fall outside the window, one on each side.
+     */
+    @Test
+    void dateTimeRangeFilterUsesGteAndLteOnTheInstant() {
+        prepareIndexes();
+        ObjectId inWindow = ObjectId.random();
+        seedShippedAt(inWindow, "2026-02-01T10:00:00Z");
+        seedShippedAt(ObjectId.random(), "2026-01-31T23:59:59.999Z");
+        seedShippedAt(ObjectId.random(), "2026-03-01T00:00:00Z");
+        FilterNode window = Filters.and(
+                Filters.field(SHIPPED_AT_IRI, "gte", JsonNodeFactory.instance.textNode("2026-02-01T00:00:00Z")),
+                Filters.field(SHIPPED_AT_IRI, "lte", JsonNodeFactory.instance.textNode("2026-02-28T23:59:59Z")));
+
+        BrowseResult result =
+                browse(new BrowseQuery(Optional.of(window), Optional.empty(), List.of(), new Page(0, 20), List.of()));
+
+        assertThat(ids(result)).containsExactly(inWindow);
+        assertThat(result.total()).isEqualTo(1);
     }
 
     @Test
