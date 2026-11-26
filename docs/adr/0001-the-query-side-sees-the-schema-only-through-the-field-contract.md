@@ -21,11 +21,12 @@ Deviations from a pure rename, recorded because the Field contract has no releas
 - `PathSegment` and `Relationship` carry the property IRI (`iri`), because the JSONB store keys properties by IRI and a UUID would need a second lookup that could go stale (Navigator decision Q13).
 - `FieldScope.concreteTypes` (Navigator decision Q15) holds the root and its concrete subtypes, filled by query-schema-adapter, and is part of the stamp, so a subtype change invalidates a cached scope.
 - `FieldType.OBJECT_REF` (Navigator decision Q18) is added before 0.1.0: a relationship Field's value is an object id, not an IRI, so it is not `IRI_REF`. The postgres adapter casts it to uuid by this type.
+- The adapter derives property and class ids from the IRI (UUID name-based), so ids are stable across activations. Capabilities default as in Navigator decision Q16: filterable is always true, sortable always false, and facetable and searchable follow the Schema's `sq:facet` and `sq:searchable` hints. Labels are the Schema's labels tagged `und` (BCP 47 undetermined), because the Schema carries no language tags. Relationship Fields are OBJECT_REF (Q18).
 
 ## Consequences
 
 - The Query side can be tested with a hand-built `FieldScope` and no ontology.
 - Changing the Schema's shape reaches the Query side only through `query-schema-adapter`.
 - The deviations are breaking changes once 0.1.0 is released. A later change to them is a major release and needs owner confirmation.
-- The Schema hints map to capabilities (`sq:facet` to `facetable`, `sq:searchable` to `searchable`, `sq:filterable` to `filterable`, `sq:sortable` to `sortable`). `sq:indexed` stays storage-only and never reaches the Query side (#14).
+- The Schema hints map to capabilities (`sq:facet` to `facetable`, `sq:searchable` to `searchable`). Capabilities default for now: filterable is always true and sortable always false, until sq:filterable and sq:sortable exist (Navigator Q16; ontology tracking issue sequeless/sequeless-ontology#21). `sq:indexed` stays storage-only and never reaches the Query side (#14).
 - This accepts sequeless-ontology ADR 0005 (`facet-core` moves here). ADR 0003 of this repo amends ontology ADR 0002.

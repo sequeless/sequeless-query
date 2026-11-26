@@ -25,6 +25,7 @@
     <module>query-field</module>
     <module>query-field-testfixtures</module>
     <module>query-core</module>
+    <module>query-schema-adapter</module>
   </modules>
 
   <repositories>

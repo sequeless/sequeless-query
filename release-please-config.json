@@ -6,6 +6,7 @@
   "packages": {
     "query-field": { "component": "query-field", "initial-version": "0.1.0", "skip-snapshot": true },
     "query-field-testfixtures": { "component": "query-field-testfixtures", "initial-version": "0.1.0", "skip-snapshot": true },
-    "query-core": { "component": "query-core", "initial-version": "0.1.0", "skip-snapshot": true }
+    "query-core": { "component": "query-core", "initial-version": "0.1.0", "skip-snapshot": true },
+    "query-schema-adapter": { "component": "query-schema-adapter", "initial-version": "0.1.0", "skip-snapshot": true }
   }
 }
