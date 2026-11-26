@@ -17,6 +17,8 @@
   <description>Contract tests and in-memory references for the Query ports: BrowsePort, ReadPort and IndexPreparationPort (spec 14, section 7.3)</description>
 
   <properties>
+    <!-- The deploy URL is built from this name; it must name this repository (the parent defaults to sequeless-build). -->
+    <sequeless.github.repository>sequeless-query</sequeless.github.repository>
     <!-- Matches query-core: this module reads query-core and query-field classes compiled for 25. -->
     <maven.compiler.release>25</maven.compiler.release>
     <!-- Opts in to the parent's enforcer ban on Spring, Jena and Lombok: the testkit has no Spring (spec 14, section 5). -->

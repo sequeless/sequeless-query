@@ -17,6 +17,8 @@
   <description>Spring Boot autoconfiguration of the Query side: the Field source, the Postgres ports and the query service (spec 14, section 6.6 and Q25 to Q31 decisions; section 5 table)</description>
 
   <properties>
+    <!-- The deploy URL is built from this name; it must name this repository (the parent defaults to sequeless-build). -->
+    <sequeless.github.repository>sequeless-query</sequeless.github.repository>
     <!-- Matches query-core: this module reads query-core classes compiled for 25. -->
     <maven.compiler.release>25</maven.compiler.release>
     <!-- Not a core module: the parent defaults sequeless.enforcer.core.skip to true, so its enforcer ban on Spring stays off here, as in query-postgres-jsonb-adapter. -->
