@@ -33,7 +33,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * <p>A browse runs three kinds of statement: a count of the matching objects, the page of items in result order, and one
  * bucket query per facet. Each takes the same candidates and the same translated filter, built by {@link BrowseSql}.
  * The shapes this port does not evaluate are rejected first, by {@link BrowseValidation}, and every SQL fragment is built
- * before the first statement runs, so a key this port cannot express (a GEO, BINARY or UNKNOWN Field) fails with no query.
+ * before the first statement runs, so a key this port cannot express (a GEO, BINARY or UNKNOWN Field) fails with no query,
+ * whether or not the scope has candidate types.
  *
  * <p>Result order is the one {@code BrowsePort} states. Ids compare as {@code uuid}, which Postgres orders by unsigned
  * bytes, so a sort on an id matches the contract. Soft-deleted objects are never read, and the tenant is the scope's.
@@ -54,6 +55,11 @@ public final class PostgresBrowsePort implements BrowsePort {
     private final TransactionTemplate transactionTemplate;
 
     /**
+     * The browse always runs in its own read-only REPEATABLE READ transaction, {@code PROPAGATION_REQUIRES_NEW}: when the
+     * caller already holds a transaction, that one is suspended and the browse takes a second connection. The settings
+     * therefore apply on every call, and the browse reads committed state only, so it does not see the caller's
+     * uncommitted writes.
+     *
      * @param jdbcClient the client that runs the statements; must not be {@code null}
      * @param transactionManager the manager of the read-only transaction the statements share; must not be {@code null},
      *     and must manage the same DataSource as {@code jdbcClient}
@@ -62,6 +68,7 @@ public final class PostgresBrowsePort implements BrowsePort {
         this.jdbcClient = Objects.requireNonNull(jdbcClient, "jdbcClient must not be null");
         Objects.requireNonNull(transactionManager, "transactionManager must not be null");
         this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.transactionTemplate.setReadOnly(true);
         this.transactionTemplate.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
     }
@@ -71,18 +78,20 @@ public final class PostgresBrowsePort implements BrowsePort {
         Objects.requireNonNull(scope, "scope must not be null");
         Objects.requireNonNull(query, "query must not be null");
         BrowseValidation.rejectUnsupportedShapes(query);
-        if (scope.concreteTypes().isEmpty()) {
-            return new BrowseResult(List.of(), 0, emptyFacets(query.facets()));
-        }
 
-        // Every fragment that can throw is built here, outside the transaction and before its first statement.
+        // Every fragment that can throw is built here, outside the transaction and before its first statement. The sort
+        // and facet fragments are built even when the scope has no concrete type, so a key this port cannot express is
+        // rejected whatever the candidates are.
         BrowseSql sql = new BrowseSql(scope, query);
-        SqlFragment matching = sql.matching();
         SqlFragment order = sql.orderBy();
         Map<FieldPath, SqlFragment> bucketQueries = new LinkedHashMap<>();
         for (FieldPath facet : query.facets()) {
             bucketQueries.put(facet, sql.bucketsOf(facet));
         }
+        if (scope.concreteTypes().isEmpty()) {
+            return new BrowseResult(List.of(), 0, emptyFacets(query.facets()));
+        }
+        SqlFragment matching = sql.matching();
         return transactionTemplate.execute(status -> read(query, matching, order, bucketQueries));
     }
 

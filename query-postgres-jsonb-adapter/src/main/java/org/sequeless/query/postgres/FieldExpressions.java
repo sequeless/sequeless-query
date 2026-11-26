@@ -16,6 +16,8 @@ import org.sequeless.query.field.api.FieldType;
  * <p>The property IRI is embedded as a string literal, never a bind parameter: an index expression cannot take
  * parameters, and the WHERE text must be the same text. Each single quote in the IRI is doubled, which keeps the
  * IRI inside its literal, and a backslash is rejected, since its meaning depends on {@code standard_conforming_strings}.
+ * A backslash in the IRI of any Field with an expression fails the whole scope with IllegalArgumentException (the
+ * BrowseSql constructor builds every such Field of the scope).
  * Only a direct Field (one segment) has an expression. A traversal Field, and a Field of
  * a type with no expression ({@code GEO}, {@code BINARY}, {@code UNKNOWN}), is rejected with {@link
  * InvalidQueryException}.
@@ -74,6 +76,7 @@ final class FieldExpressions {
      * @param field a Field; must not be {@code null}
      * @return the expression text, the same text for WHERE, ORDER BY and the index DDL
      * @throws InvalidQueryException if the Field is a traversal, or its type has no expression
+     * @throws IllegalArgumentException if the property IRI contains a backslash
      */
     static String sqlOf(Field field) {
         Objects.requireNonNull(field, "field must not be null");
@@ -103,6 +106,7 @@ final class FieldExpressions {
      * @param field a Field; must not be {@code null}
      * @return the expression of {@link #sqlOf(Field)}
      * @throws InvalidQueryException as {@link #sqlOf(Field)}
+     * @throws IllegalArgumentException as {@link #sqlOf(Field)}
      */
     static SqlExpression sqlExpressionOf(Field field) {
         return new SqlExpression(sqlOf(field), List.of());
@@ -123,6 +127,7 @@ final class FieldExpressions {
      * @param field a Field; must not be {@code null}
      * @return the bucket text expression, with no bind parameters
      * @throws InvalidQueryException as {@link #sqlOf(Field)}
+     * @throws IllegalArgumentException as {@link #sqlOf(Field)}
      */
     static String bucketTextOf(Field field) {
         String expression = sqlOf(field);

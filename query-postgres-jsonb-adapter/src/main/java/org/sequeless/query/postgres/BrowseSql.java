@@ -36,8 +36,8 @@ import org.sequeless.query.field.api.FieldType;
  * The Field expressions and the {@code id} come from {@link FieldExpressions} and the literal column names, never from
  * a bound value.
  *
- * <p>The caller ensures {@code scope.concreteTypes()} is not empty: an empty set has no candidates, so the port returns
- * an empty result before building this.
+ * <p>{@code scope.concreteTypes()} may be empty. The port then runs no statement, but it still builds this, so that the
+ * sort and facet keys are checked.
  */
 final class BrowseSql {
 
@@ -56,7 +56,7 @@ final class BrowseSql {
     private final QueryBuilder builder;
 
     /**
-     * @param scope the resolved scope; must not be {@code null}, with at least one concrete type
+     * @param scope the resolved scope; must not be {@code null}; its concrete types may be empty
      * @param query the query to build SQL for; must not be {@code null}, and already checked by {@link BrowseValidation}
      */
     BrowseSql(FieldScope scope, BrowseQuery query) {

@@ -107,8 +107,7 @@
       <groupId>tools.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
-    <!-- Jackson 2 (com.fasterxml), which filter-core's FieldFilter operands are. Only the tests build them, so the module
-         declares it for test scope rather than leaning on the transitive compile dependency. -->
+    <!-- test scope: main code does not use Jackson 2 directly; consumers get it through filter-core. -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>

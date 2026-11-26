@@ -165,13 +165,18 @@ class PostgresDateBrowseIT extends AbstractPostgresIT {
 
     /**
      * A gte and an lte on the DATETIME Field: the {@code ::timestamptz} comparison and the {@code Timestamp} binding of
-     * {@link ValueConverter}, which no other IT exercises. Two rows fall outside the window, one on each side.
+     * {@link ValueConverter}, which no other IT exercises. Two rows fall outside the window, one on each side. One row sits
+     * exactly on each bound, so the test pins gte against gt and lte against lt.
      */
     @Test
     void dateTimeRangeFilterUsesGteAndLteOnTheInstant() {
         prepareIndexes();
+        ObjectId atLowerBound = ObjectId.random();
         ObjectId inWindow = ObjectId.random();
+        ObjectId atUpperBound = ObjectId.random();
+        seedShippedAt(atLowerBound, "2026-02-01T00:00:00Z");
         seedShippedAt(inWindow, "2026-02-01T10:00:00Z");
+        seedShippedAt(atUpperBound, "2026-02-28T23:59:59Z");
         seedShippedAt(ObjectId.random(), "2026-01-31T23:59:59.999Z");
         seedShippedAt(ObjectId.random(), "2026-03-01T00:00:00Z");
         FilterNode window = Filters.and(
@@ -181,8 +186,8 @@ class PostgresDateBrowseIT extends AbstractPostgresIT {
         BrowseResult result =
                 browse(new BrowseQuery(Optional.of(window), Optional.empty(), List.of(), new Page(0, 20), List.of()));
 
-        assertThat(ids(result)).containsExactly(inWindow);
-        assertThat(result.total()).isEqualTo(1);
+        assertThat(ids(result)).containsExactlyInAnyOrder(atLowerBound, inWindow, atUpperBound);
+        assertThat(result.total()).isEqualTo(3);
     }
 
     @Test
