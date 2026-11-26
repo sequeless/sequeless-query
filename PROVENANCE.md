@@ -1,11 +1,38 @@
 # Provenance
 
-- Source repos: sequeless/sequeless-filter, sequeless/sequeless-ontology, sequeless/sequeless-prototype
-- Source SHAs: filter@b5f69021807434981b7809cda78bb545801cba54, ontology@ace531320c135b40ece72336382078aacc882ba5, prototype@f1451a77dea33bf6d8c207fa2deced54bc8d7b21
-- Source paths:
-  - filter: Makefile, mvnw, mvnw.cmd, .mvn/wrapper/maven-wrapper.properties, commitlint.config.mjs, .devcontainer/devcontainer.json, .editorconfig, .gitattributes, LICENSE, .gitignore, .github/pull_request_template.md, .github/ISSUE_TEMPLATE/*, scripts/new-adr.sh, docs/adr/_template.md, docs/adr/0000-record-architecture-decisions.md, CONTRIBUTING.md
-  - ontology: CODEOWNERS, sonar-project.properties, .gitignore (AI-agent lines), facet-core BoundaryRulesTest (the four rules)
-  - prototype: CLAUDE.md, docs/agents/issue-tracker.md, docs/agents/domain.md, docs/agents/design-preferences.md
-- The move: copied and adapted into a GitHub template repo. Sources unchanged.
-- Date: 2026-10-27
-- Decisions: sequeless-prototype#17, #23 (extraction plan), spec 2 = #30
+- Created from: sequeless/sequeless-template@125d7fe (the template script `scripts/init-repo.sh query --github` ran once).
+- Date: 2026-11-26
+- Spec: `docs/extraction/spec-14-sequeless-query.md` (sequeless-prototype #42).
+
+## Moved from sequeless-ontology at `b38938d` (main, 2026-11-26)
+
+- Source paths, moved to `query-field` (package `org.sequeless.query.field`):
+  - `facet-core/src/main/java/org/sequeless/ontology/facet/core/{api,spi,internal}/*.java`, renamed: `Facet*` to `Field*`, `FacetSource` to `FieldSource`, `FacetPathCodec` to `FieldPathCodec`, `FacetMerger` to `FieldMerger`. `Principal.java` is dropped and folded into kernel-identity.
+  - `facet-core/src/test/java/org/sequeless/ontology/facet/core/**`
+  - `facet-core/pom.xml`, `facet-core/src/test/.../BoundaryRulesTest.java`
+  - `docs/specs/facet-contract/design.md`, copied as `docs/specs/field-contract.md` with renamed prose.
+- Source paths, moved to `query-field-testfixtures` (package `org.sequeless.query.field.testfixtures`):
+  - `facet-core-testfixtures/src/main/java/org/sequeless/ontology/facet/core/testfixtures/*.java`
+  - `facet-core-testfixtures/src/test/java/org/sequeless/ontology/facet/core/testfixtures/*.java`
+- Source ADRs read, not copied: `docs/adr/0002-facet-core-is-a-zero-dependency-contract-module.md` (amended by ADR 0003 here) and `docs/adr/0005-facet-core-moves-to-sequeless-query.md` (accepted here).
+- Changes made in the move (spec 14, sections 4 and 6): `OntologyVersionRef` replaces the version IRI strings; `FieldScopeRequest.tenantId` is kernel-identity `TenantId`; `StampCalculator` sorts versions numerically; `FieldSource.rootClasses(TenantId)` is added.
+
+## Consumed, not copied
+
+- sequeless-kernel at `11a92be`: `org.sequeless.kernel.identity.Principal` (kernel-identity 0.1.1) replaces facet-core's `Principal`.
+- sequeless-filter at `67e9155`: `filter-core`, `filter-sql-adapter` and `filter-sql-postgres-adapter` (BOM versions) provide `FilterNode`, `FieldRegistry`, `FieldResolver` and `PostgresQueryBuilder`.
+
+## Moved from sequeless-prototype at `48a0cc6` (main), in later changes of this spec
+
+- Ported, not byte-moved, to `query-core`, `query-testkit` and `query-postgres-jsonb-adapter`:
+  - `sequeless-spi/src/main/java/org/sequeless/spi/query/{BrowsePort,ReadPort,IndexPreparationPort,Query,QueryResult,FacetBucket,ObjectView,ReadRequest,Sort,Direction}.java`
+  - `sequeless-spi/src/main/java/org/sequeless/spi/object/{Page,Audit,PropertyRef,TypeRef}.java`
+  - `sequeless-spi-testkit/src/main/java/org/sequeless/testkit/query/{BrowseContract,ReadContract,ObjectViews,QueryFixtures}.java`
+  - `sequeless-spi-testkit/src/test/java/org/sequeless/testkit/query/{InMemoryBrowsePort,InMemoryReadPort}.java`
+  - `sequeless-adapter-persistence-postgres/src/main/java/org/sequeless/adapter/persistence/postgres/PostgresQueryStore.java` (`query`, `ensureIndexes`, `castExpression`)
+  - `sequeless-adapter-persistence-postgres/src/main/resources/db/migration/sequeless/postgres-query/V1__index_registry.sql` and `V2__search_gin_index.sql`, copied unchanged.
+- Not moved: `Criterion`, `Operator`, `AggregateRequest`, `AggregateResult`, `QueryPort`. Aggregates stay on the Command side.
+
+## Reverse pointers
+
+The prototype deletes the moved code in spec 17 (prototype-stage4-cutover), in a commit that names this repo and this import commit's SHA.

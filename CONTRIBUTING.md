@@ -1,4 +1,4 @@
-# Contributing to sequeless-template
+# Contributing to sequeless-query
 
 ## Setup
 
