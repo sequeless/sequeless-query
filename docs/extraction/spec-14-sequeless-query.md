@@ -203,6 +203,7 @@ ArchUnit: every module has a `BoundaryRulesTest` (ADR kernel 0001 and spec 11 se
 - A per-datatype `ValueConverter` (`LocalDate`, `OffsetDateTime`, `UUID`, `BigDecimal`) coerces each JSON value (#21 amendment).
 - Operators and rendering come from `PostgresQueryBuilder` (`IS DISTINCT FROM`, escaped `ILIKE`) in filter-sql-postgres-adapter.
 - Migrations V1 and V2 are copied unchanged (Q5).
+- The Postgres adapter implements `ReadPort` (read by id, with the tenant and soft-delete rules of the browse port), tested by `PostgresReadContractIT`.
 
 ### 6.5 FieldRegistry key for traversal paths
 
