@@ -17,6 +17,8 @@ import static org.sequeless.query.testsupport.QueryFixtures.path;
 import static org.sequeless.query.testsupport.QueryFixtures.request;
 import static org.sequeless.query.testsupport.QueryFixtures.scope;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,8 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.sequeless.filter.api.FilterNode;
 import org.sequeless.filter.api.Filters;
 import org.sequeless.kernel.identity.Principal;
@@ -62,6 +66,11 @@ class DefaultQueryServiceTest {
     private static final ClassRef INVOICE = classRef("Invoice");
     private static final ClassRef CUSTOMER = classRef("Customer");
     private static final FieldPath STATUS_PATH = path("urn:ont:status");
+    private static final String STATUS_IRI = "urn:ont:status";
+    private static final String DUE_DATE_IRI = "urn:ont:dueDate";
+    private static final String SHIPPED_AT_IRI = "urn:ont:shippedAt";
+    private static final FieldPath DUE_DATE_PATH = path(DUE_DATE_IRI);
+    private static final FieldPath SHIPPED_AT_PATH = path(SHIPPED_AT_IRI);
     private static final FieldPath NOTES_PATH = path("urn:ont:notes");
     private static final FieldPath TOTAL_PATH = path("urn:ont:total");
     private static final Field STATUS = field(STATUS_PATH, FieldType.STRING, FILTER_FACET_SORT);
@@ -192,6 +201,87 @@ class DefaultQueryServiceTest {
 
         assertThat(service.browse(request(INVOICE), query)).isEqualTo(BROWSE_RESULT);
         assertThat(browsePort.queries).containsExactly(query);
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "gt",
+                "gte",
+                "lt",
+                "lte",
+                "is greater than",
+                "is greater than or equal to",
+                "is less than",
+                "is less than or equal to"
+            })
+    void aDateFieldAcceptsTheAliasAndTheCanonicalNameOfEachOrderOperator(String operator) {
+        FilterNode filter = Filters.field(DUE_DATE_IRI, operator, text("2026-02-01"));
+
+        assertThat(problemsOfFilter(DUE_DATE_PATH, FieldType.DATE, filter)).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "gt",
+                "gte",
+                "lt",
+                "lte",
+                "is greater than",
+                "is greater than or equal to",
+                "is less than",
+                "is less than or equal to"
+            })
+    void aDatetimeFieldAcceptsTheAliasAndTheCanonicalNameOfEachOrderOperator(String operator) {
+        FilterNode filter = Filters.field(SHIPPED_AT_IRI, operator, text("2026-02-01T10:00:00Z"));
+
+        assertThat(problemsOfFilter(SHIPPED_AT_PATH, FieldType.DATETIME, filter))
+                .isEmpty();
+    }
+
+    @Test
+    void aStringFieldRejectsTheOrderAliasGteBecauseItsTypeDoesNotAllowIt() {
+        FilterNode filter = Filters.field(STATUS_IRI, "gte", text("open"));
+
+        assertThat(problemsOfFilter(STATUS_PATH, FieldType.STRING, filter))
+                .contains("Operator 'gte' is not applicable to type 'string'");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"=", "is", "is equal to", "!=", "is not"})
+    void aStringFieldAcceptsTheEqualityAliasesAndTheirCanonicalNames(String operator) {
+        FilterNode filter = Filters.field(STATUS_IRI, operator, text("open"));
+
+        assertThat(problemsOfFilter(STATUS_PATH, FieldType.STRING, filter)).isEmpty();
+    }
+
+    @Test
+    void aStringFieldAcceptsTheInAliasWithAListValue() {
+        FilterNode filter = Filters.field(
+                STATUS_IRI, "in", JsonNodeFactory.instance.arrayNode().add("open"));
+
+        assertThat(problemsOfFilter(STATUS_PATH, FieldType.STRING, filter)).isEmpty();
+    }
+
+    /** Browses a scope holding one filterable Field of {@code type}; empty when the filter is accepted. */
+    private List<String> problemsOfFilter(FieldPath path, FieldType type, FilterNode filter) {
+        FieldScope scopeWithField = scope(INVOICE, List.of(field(path, type, FILTER_ONLY)));
+        DefaultQueryService serviceOverField = new DefaultQueryService(
+                new FakeFieldSource(List.of(INVOICE), Map.of(INVOICE, scopeWithField)),
+                browsePort,
+                readPort,
+                indexPreparationPort);
+        try {
+            serviceOverField.browse(request(INVOICE), query(Optional.of(filter), List.of(), List.of()));
+            return List.of();
+        } catch (InvalidQueryException e) {
+            return e.problems();
+        }
+    }
+
+    private static JsonNode text(String value) {
+        return JsonNodeFactory.instance.textNode(value);
     }
 
     @Test

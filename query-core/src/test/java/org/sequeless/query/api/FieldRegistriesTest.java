@@ -121,4 +121,16 @@ class FieldRegistriesTest {
         assertThat(definition.getPermittedOperators()).contains("is", "exists", "contains");
         assertThat(definition.getPermittedOperators()).doesNotContain("is greater than");
     }
+
+    @Test
+    void permittedOperatorsListTheAliasesOfEachApplicableOperatorBesideItsCanonicalName() {
+        Field dueDate = field(path("urn:ont:dueDate"), FieldType.DATE, FILTER_ONLY);
+
+        FieldDefinition definition = FieldRegistries.of(scope(INVOICE, List.of(dueDate)))
+                .find("urn:ont:dueDate")
+                .orElseThrow();
+
+        assertThat(definition.getPermittedOperators())
+                .contains("is greater than or equal to", "gte", "is less than", "lt");
+    }
 }

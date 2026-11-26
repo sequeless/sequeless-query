@@ -2,6 +2,7 @@ package org.sequeless.query.api;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import org.sequeless.filter.api.FieldDefinition;
 import org.sequeless.filter.api.FieldRegistry;
 import org.sequeless.filter.api.FieldRegistrySpec;
@@ -16,9 +17,16 @@ import org.sequeless.query.field.api.FieldType;
  * {@code FilterValidator} and the filter-sql translators can check a filter against the Fields the scope allows.
  *
  * <p>Each Field with {@code filterable} becomes one {@link FieldDefinition}, keyed by {@link
- * FieldKey#encode}. Its JSON Schema type and format come from its {@link FieldType}, and its
- * permitted operators are the canonical names filter-core's default registry applies to that type
- * and format. No filter-core JSON type leaves this class.
+ * FieldKey#encode}. Its JSON Schema type and format come from its {@link FieldType}. Its permitted
+ * operators are, for each operator filter-core's default registry applies to that type and format,
+ * the canonical name and then each alias of that operator. The aliases are listed because
+ * {@code FilterValidator} compares the operator text of a filter literally with this list, so a
+ * filter that says {@code gte} would otherwise be rejected although its type is right (spec 14,
+ * Q30). No filter-core JSON type leaves this class.
+ *
+ * <p>The list is only compared, never shown: filter-core's error text does not print it, and its
+ * schema provider compares canonical names only, so the aliases change no message. When filter-core
+ * issue sequeless/sequeless-filter#39 ships, the aliases are removed from this list (spec 14, Q30).
  *
  * <p>This is public API, not internal, because the postgres adapter builds its filter registry here
  * (spec 14, step 2a). It cannot reach a package-private bridge, and api may not depend on internal.
@@ -47,7 +55,7 @@ public final class FieldRegistries {
     private static FieldDefinition definitionOf(Field field, OperatorRegistry operators) {
         JsonSchemaShape shape = shapeOf(field.type());
         List<String> permitted = operators.applicableTo(shape.type(), shape.format()).stream()
-                .map(OperatorDefinition::getCanonicalName)
+                .flatMap(FieldRegistries::spellingsOf)
                 .toList();
         return FieldDefinition.builder()
                 .path(FieldKey.encode(field.path()))
@@ -55,6 +63,14 @@ public final class FieldRegistries {
                 .jsonSchemaFormat(shape.format())
                 .permittedOperators(permitted)
                 .build();
+    }
+
+    /**
+     * Every spelling of an operator the validator accepts: its canonical name first, then its aliases, both taken from
+     * the operator definition, so no alias is written here by hand.
+     */
+    private static Stream<String> spellingsOf(OperatorDefinition operator) {
+        return Stream.concat(Stream.of(operator.getCanonicalName()), operator.getAliases().stream());
     }
 
     /** The JSON Schema type and format a {@link FieldType} maps to; the format may be {@code null}. */
