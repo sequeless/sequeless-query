@@ -14,8 +14,8 @@ import org.sequeless.query.field.api.OntologyVersionRef;
 import org.sequeless.query.field.api.OperatorRestriction;
 
 /**
- * Nine canned {@link ContractFixture} scenarios, each exercising one facet of the contract's semantics: version merge
- * (§4.4), merge conflicts (§4.5), the traversal guards (§4.3), and RBAC facet filtering (§4.10).
+ * Nine canned {@link ContractFixture} scenarios, each exercising one facet of the contract's semantics: version merge,
+ * merge conflicts, the traversal guards, and RBAC facet filtering.
  *
  * <p>Every scenario belongs to tenant {@code "acme"}. Ontology versions are {@code 1} and {@code 2},
  * and (reserved for scenarios needing a third version) {@code 3}. Every identity below — every distinct property, relationship, and class across
