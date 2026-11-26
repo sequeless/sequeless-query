@@ -95,9 +95,17 @@ public final class InMemoryFieldSource implements FieldSource {
         ValidatedRoot validated = validateRequestAndMergeRootFacets(request);
         List<Relationship> relationships = walkableRelationships(validated.classFixture(), request);
         Set<OntologyVersionRef> ontologyVersions = collectVersions(validated.mergedFacets(), relationships);
-        String stamp = StampCalculator.stamp(request, ontologyVersions);
+        // The fixture has no class hierarchy, so the root is its only concrete type.
+        Set<ClassRef> concreteTypes = Set.of(request.root());
+        String stamp = StampCalculator.stamp(request, ontologyVersions, concreteTypes);
         return new FieldScope(
-                request.root(), validated.mergedFacets(), relationships, stamp, ontologyVersions, request);
+                request.root(),
+                validated.mergedFacets(),
+                relationships,
+                stamp,
+                ontologyVersions,
+                concreteTypes,
+                request);
     }
 
     @Override
@@ -155,7 +163,13 @@ public final class InMemoryFieldSource implements FieldSource {
 
         // stamp is deliberately unchanged from scope.stamp() -- see FieldSource#expand's contract.
         return new FieldScope(
-                scope.root(), allFacets, allRelationships, scope.stamp(), ontologyVersions, scope.request());
+                scope.root(),
+                allFacets,
+                allRelationships,
+                scope.stamp(),
+                ontologyVersions,
+                scope.concreteTypes(),
+                scope.request());
     }
 
     @Override

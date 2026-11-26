@@ -213,6 +213,17 @@ public abstract class FieldSourceContractTest {
     }
 
     @Test
+    final void resolveFillsConcreteTypesWithTheRootOfAConcreteClass() {
+        ContractFixture fixture = ContractFixtures.invoiceAndCustomer();
+        FieldSource source = sourceFor(fixture);
+
+        FieldScope scope = source.resolve(defaultRequest(fixture));
+
+        // Every fixture class is concrete, so the root must be one of its own concrete types.
+        assertThat(scope.concreteTypes()).isNotNull().contains(scope.root());
+    }
+
+    @Test
     final void resolveUnknownTenantRaisesUnknownTenant() {
         ContractFixture fixture = ContractFixtures.invoiceAndCustomer();
         FieldSource source = sourceFor(fixture);
@@ -321,6 +332,7 @@ public abstract class FieldSourceContractTest {
         FieldScope expanded = source.expand(scope, relationshipPath(fixture, "customer"));
 
         assertThat(expanded.stamp()).isEqualTo(scope.stamp());
+        assertThat(expanded.concreteTypes()).isEqualTo(scope.concreteTypes());
     }
 
     // ------------------------------------------------------------------------------------------
@@ -711,6 +723,7 @@ public abstract class FieldSourceContractTest {
         FieldScope expanded = source.expand(scope, relationshipPath(fixture, "toB"));
 
         assertThat(expanded.stamp()).isEqualTo(scope.stamp());
+        assertThat(expanded.concreteTypes()).isEqualTo(scope.concreteTypes());
     }
 
     // ------------------------------------------------------------------------------------------
