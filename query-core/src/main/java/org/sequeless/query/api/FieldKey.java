@@ -1,4 +1,4 @@
-package org.sequeless.query.internal;
+package org.sequeless.query.api;
 
 import java.util.Arrays;
 import java.util.List;
@@ -16,12 +16,12 @@ import org.sequeless.query.field.api.PathSegment;
  * had (spec 11, decision 5). The postgres adapter reads keys through {@link #decode(String)} and
  * escapes each IRI as a literal.
  */
-public final class FieldKeys {
+public final class FieldKey {
 
     private static final String SEPARATOR = "|";
     private static final String SEPARATOR_REGEX = "\\|";
 
-    private FieldKeys() {}
+    private FieldKey() {}
 
     /**
      * Builds the registry key of {@code path}: the segment IRIs joined by {@code |}.

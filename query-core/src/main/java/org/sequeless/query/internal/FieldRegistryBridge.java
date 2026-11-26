@@ -7,6 +7,7 @@ import org.sequeless.filter.api.FieldRegistry;
 import org.sequeless.filter.api.FieldRegistrySpec;
 import org.sequeless.filter.api.OperatorDefinition;
 import org.sequeless.filter.api.OperatorRegistry;
+import org.sequeless.query.api.FieldKey;
 import org.sequeless.query.field.api.Field;
 import org.sequeless.query.field.api.FieldScope;
 import org.sequeless.query.field.api.FieldType;
@@ -16,7 +17,7 @@ import org.sequeless.query.field.api.FieldType;
  * {@code FilterValidator} can check a filter against the Fields the scope allows.
  *
  * <p>Each Field with {@code filterable} becomes one {@link FieldDefinition}, keyed by {@link
- * FieldKeys#encode}. Its JSON Schema type and format come from its {@link FieldType}, and its
+ * FieldKey#encode}. Its JSON Schema type and format come from its {@link FieldType}, and its
  * permitted operators are the canonical names filter-core's default registry applies to that type
  * and format. No filter-core JSON type leaves this class.
  */
@@ -47,7 +48,7 @@ final class FieldRegistryBridge {
                 .map(OperatorDefinition::getCanonicalName)
                 .toList();
         return FieldDefinition.builder()
-                .path(FieldKeys.encode(field.path()))
+                .path(FieldKey.encode(field.path()))
                 .jsonSchemaType(shape.type())
                 .jsonSchemaFormat(shape.format())
                 .permittedOperators(permitted)
