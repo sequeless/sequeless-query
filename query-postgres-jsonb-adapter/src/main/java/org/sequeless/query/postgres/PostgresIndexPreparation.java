@@ -43,6 +43,10 @@ import org.springframework.transaction.support.TransactionTemplate;
  *   <li>a Field that is {@code filterable} alone gets nothing.
  * </ul>
  *
+ * <p>A searchable {@code DATE} or {@code DATETIME} Field is registered for search and listed, as any searchable Field is.
+ * The V6 text extraction ({@code sq_extract_searchable_text}) reads only the JSON keys {@code text} and {@code list}, so
+ * such a registration adds no search text; it only triggers the backfill.
+ *
  * <p>A type with no expression ({@code GEO}, {@code BINARY}, {@code UNKNOWN}) gets no expression index, and the call
  * does not fail. A query that sorts, facets or filters on it is rejected at query time instead. A {@code DATE} or
  * {@code DATETIME} Field also gets no expression index, and the call does not fail, but its queries still run, only

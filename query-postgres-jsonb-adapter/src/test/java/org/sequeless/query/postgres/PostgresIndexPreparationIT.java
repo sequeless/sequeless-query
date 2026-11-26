@@ -36,6 +36,11 @@ class PostgresIndexPreparationIT extends AbstractPostgresIT {
             "task",
             "urn:ex:Task",
             new LocalizedText("Task", "en"));
+    private static final ClassRef PROJECT = new ClassRef(
+            UUID.fromString("00000000-0000-0000-0000-0000000000a2"),
+            "project",
+            "urn:ex:Project",
+            new LocalizedText("Project", "en"));
 
     private static final String STATUS = "urn:ex:status";
     private static final String PRIORITY = "urn:ex:priority";
@@ -125,6 +130,34 @@ class PostgresIndexPreparationIT extends AbstractPostgresIT {
         assertThat(searchRegistrations()).containsExactly(TITLE);
         assertThat(indexRegistrations()).isEmpty();
         assertThat(indexNamesInDatabase()).isEmpty();
+    }
+
+    @Test
+    void indexOnlyFieldsAreIndexedButNotListedInTheResult() {
+        IndexPreparationResult result = port().prepare(
+                        TENANT,
+                        V1,
+                        Map.of(
+                                TASK,
+                                List.of(
+                                        direct(STATUS, FieldType.STRING, FACET_SORT),
+                                        direct(PRIORITY, FieldType.INTEGER, SORT))));
+
+        assertThat(result.newlyRegistered()).isEmpty();
+        assertThat(indexRegistrations()).containsExactlyInAnyOrder(STATUS, PRIORITY);
+        assertThat(searchRegistrations()).isEmpty();
+    }
+
+    @Test
+    void aSearchableDateFieldIsListedOnceAndGetsNoIndex() {
+        Field dueDate = direct(DUE_DATE, FieldType.DATE, SEARCH);
+
+        IndexPreparationResult result =
+                port().prepare(TENANT, V1, Map.of(TASK, List.of(dueDate), PROJECT, List.of(dueDate)));
+
+        assertThat(result.newlyRegistered()).containsExactly(dueDate.path());
+        assertThat(searchRegistrations()).containsExactly(DUE_DATE);
+        assertThat(indexRegistrations()).isEmpty();
     }
 
     @Test
