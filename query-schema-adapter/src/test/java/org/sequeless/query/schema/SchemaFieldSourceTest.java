@@ -91,7 +91,7 @@ class SchemaFieldSourceTest {
 
     @Test
     void sortableOnlyWhenCardinalityMaxIsExactlyOne() {
-        // Spec 17 (prototype cut-over): sortable when the cardinality max is present and equals 1.
+        // Prototype cut-over: sortable when the cardinality max is present and equals 1.
         // Zero, unbounded and ranges above one stay unsortable.
         FieldScope scope = resolve(
                 schema(
@@ -537,7 +537,7 @@ class SchemaFieldSourceTest {
 
     @Test
     void anAbstractRootCoversTheSortablePropertyOfItsConcreteSubtype() {
-        // Spec 17: a property declared only by a subtype is part of the root's scope, and the Q-sort rule applies.
+        // A property declared only by a subtype is part of the root's scope, and the Q-sort rule applies.
         FieldScope scope = resolve(
                 schema(
                         1,
@@ -584,7 +584,7 @@ class SchemaFieldSourceTest {
 
     @Test
     void aRootsOwnCopyWinsOverASubtypeCopyWithDifferentFlags() {
-        // Root wins (spec 17): the root declares "status" and a subtype redeclares it with other flags. The root's
+        // Root wins: the root declares "status" and a subtype redeclares it with other flags. The root's
         // copy alone is the scope's Field, so the subtype's facet=false does not withhold facet and the root's
         // searchable=false stands. A conjunction over both copies would give (facet false, search false), and
         // first-wins or last-wins would give the other copy's flags; each of those fails this test.
@@ -619,7 +619,7 @@ class SchemaFieldSourceTest {
 
     @Test
     void aRootsOwnPropertyStaysSortableWhenASubtypeNarrowsItsCardinality() {
-        // Root wins (spec 17, Navigator decision): the root declares "title" as single-valued; a subtype narrows it
+        // Root wins (Navigator decision): the root declares "title" as single-valued; a subtype narrows it
         // to exactly one. The root's copy is the Field, so it stays sortable and is not a conflict. Against the
         // any-copy rule, the two cardinalities disagree and the Field would be the unusable conflict Field.
         FieldScope scope = resolve(
@@ -789,7 +789,7 @@ class SchemaFieldSourceTest {
 
     @Test
     void subtypesThatDisagreeOnCardinalityGiveAnUnusableFieldAndPickNoneOfTheirDefinitions() {
-        // Spec 17 conflict rule: A says atMost(1) (sortable), B says unbounded. Neither wins.
+        // Conflict rule: A says atMost(1) (sortable), B says unbounded. Neither wins.
         FieldScope scope = resolve(
                 schema(
                         1,

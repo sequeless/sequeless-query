@@ -166,13 +166,13 @@ public final class PostgresIndexPreparation implements IndexPreparationPort {
      * of {@code tenantId|propertyIri}. Package-private, so the tests pin the scheme.
      *
      * <p>The MD5 is a derived identifier, not a security control. The names must match the prototype's existing indexes
-     * until the spec 17 cutover, so the scheme stays as it is. The input is not
+     * until the prototype cut-over, so the scheme stays as it is. The input is not
      * secret, and the digest is not used for a password, a credential or an integrity check.
      */
     static String indexNameFor(String tenantId, String propertyIri) {
         try {
             // Deterministic index identifier, not a secret: the name must match the prototype's indexes
-            // until the spec 17 cutover.
+            // until the prototype cut-over.
             MessageDigest md5 = MessageDigest.getInstance("MD5"); // NOSONAR java:S4790
             byte[] digest = md5.digest((tenantId + "|" + propertyIri).getBytes(StandardCharsets.UTF_8));
             return "sq_idx_" + HexFormat.of().formatHex(digest).substring(0, 16);

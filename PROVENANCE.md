@@ -32,7 +32,3 @@
   - `sequeless-adapter-persistence-postgres/src/main/java/org/sequeless/adapter/persistence/postgres/PostgresQueryStore.java` (`query`, `ensureIndexes`, `castExpression`)
   - `sequeless-adapter-persistence-postgres/src/main/resources/db/migration/sequeless/postgres-query/V1__index_registry.sql` and `V2__search_gin_index.sql`, copied unchanged.
 - Not moved: `Criterion`, `Operator`, `AggregateRequest`, `AggregateResult`, `QueryPort`. Aggregates stay on the Command side.
-
-## Reverse pointers
-
-The prototype deletes the moved code in spec 17 (prototype-stage4-cutover), in a commit that names this repo and this import commit's SHA.

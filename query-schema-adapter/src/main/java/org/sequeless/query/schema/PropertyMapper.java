@@ -83,7 +83,7 @@ final class PropertyMapper {
 
     /**
      * The Fields a root's FieldScope carries: one per property IRI declared by the root or by any of its
-     * transitive subtypes (spec 17). The root's own properties come first, in declaration order, then the
+     * transitive subtypes. The root's own properties come first, in declaration order, then the
      * subtype-only ones. A property the root declares is the root's copy alone (see {@link #groupByIri}); the
      * conflict rule for a subtype-only property is on {@link #unionField}.
      *
@@ -116,7 +116,7 @@ final class PropertyMapper {
     }
 
     /**
-     * The conflict rule for a property declared by more than one covered type (spec 17).
+     * The conflict rule for a property declared by more than one covered type.
      *
      * <p>The definitions agree when they share the kind (attribute or relationship), the datatype or the
      * target type, and the cardinality. Agreeing definitions give one Field: filterable as always, facetable
@@ -204,7 +204,7 @@ final class PropertyMapper {
 
     /**
      * The property definitions the root's scope groups, by property IRI, in first-declared order. The root wins
-     * (Navigator decision, spec 17): an IRI the root's own list declares, inherited copies included, is grouped
+     * (Navigator decision): an IRI the root's own list declares, inherited copies included, is grouped
      * from the root's copy alone, so a subtype's copy of it, even a narrowed one, is not part of the scope. Only
      * an IRI the root does not declare is grouped across the subtypes, where its copies must agree to be usable.
      * {@code covered} comes root first, as {@link SchemaView#typeAndSubtypes} returns it.
@@ -259,9 +259,9 @@ final class PropertyMapper {
      * The capability defaults. Every property filters, and facet and search follow the property's own
      * flags. A property is sortable when it holds at most one value per object (cardinality max is
      * present and equal to 1). This overrides Navigator decision Q16 for sort only, decided for the
-     * sequeless-prototype cut-over (spec 17). Change a default here and nowhere else.
+     * sequeless-prototype cut-over. Change a default here and nowhere else.
      *
-     * <p>Over several agreeing definitions (spec 17, subtypes), facet and search hold only when every
+     * <p>Over several agreeing definitions (subtypes), facet and search hold only when every
      * definition allows them, so no subtype's flag is silently overridden by another's. Sort needs no such
      * rule: the definitions agree on cardinality, so the first one's cardinality answers for all of them.
      *

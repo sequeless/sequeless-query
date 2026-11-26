@@ -63,7 +63,7 @@ public final class SchemaFieldSource implements FieldSource {
         TypeDefinition root = root(view, request.root());
         requireActiveVersion(view, request.versionPolicy());
         PropertyMapper mapper = new PropertyMapper(view);
-        // A root covers its own properties and every transitive subtype's (spec 17), abstract ones included.
+        // A root covers its own properties and every transitive subtype's, abstract ones included.
         List<TypeDefinition> covered = view.typeAndSubtypes(root);
         List<Field> facets = mapper.unionFields(covered);
         Set<ClassRef> concreteTypes = view.concreteTypes(root);
@@ -208,7 +208,7 @@ public final class SchemaFieldSource implements FieldSource {
 
     /**
      * The definitions a path segment names on the class the walk is at, empty when none does. The root hop
-     * (index 0) reads the union of the root's and its subtypes' definitions, as resolve() does (spec 17), so
+     * (index 0) reads the union of the root's and its subtypes' definitions, as resolve() does, so
      * describe() and expand() agree with resolve() on a root's properties. A deeper hop reads only the class
      * the walk has entered.
      */

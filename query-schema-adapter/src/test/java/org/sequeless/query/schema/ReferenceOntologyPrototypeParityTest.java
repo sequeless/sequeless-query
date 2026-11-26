@@ -21,7 +21,7 @@ import org.sequeless.query.field.api.FieldScope;
 
 /**
  * The released union agrees with the prototype's union on the reference ontology, for each abstract root, up to
- * the difference set this test asserts (spec 17, sequeless-prototype #45).
+ * the difference set this test asserts (sequeless-prototype #45).
  *
  * <p><b>Baseline.</b> The prototype's answers are reproduced from sequeless-prototype,
  * sequeless-core DefaultBusinessObjectService:
