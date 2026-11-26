@@ -48,7 +48,271 @@ The modules depend on each other as follows:
 - `query-postgres-jsonb-adapter` depends on `query-core` and `query-field`. It uses `query-testkit` in test scope.
 - `query-spring-boot-autoconfig` depends on `query-core`, `query-field`, `query-schema-adapter`, `query-postgres-jsonb-adapter`, and schema-contract.
 
+```mermaid
+flowchart TD
+    KI["kernel-identity"]
+    SC["schema-contract"]
+    QF["query-field"]
+    QFT["query-field-testfixtures"]
+    QC["query-core"]
+    QSA["query-schema-adapter"]
+    QT["query-testkit"]
+    QPG["query-postgres-jsonb-adapter"]
+    QAC["query-spring-boot-autoconfig"]
+
+    QF --> KI
+    QFT --> QF
+    QC --> QF
+    QSA --> QF
+    QSA --> SC
+    QT --> QC
+    QT --> QF
+    QT --> QFT
+    QPG --> QC
+    QPG --> QF
+    QPG -.->|"test scope"| QT
+    QAC --> QC
+    QAC --> QF
+    QAC --> QSA
+    QAC --> QPG
+    QAC --> SC
+```
+
 Modules from outside this repository are kernel-identity, kernel-values, filter-core, filter-sql-adapter, filter-sql-postgres-adapter, and schema-contract.
+
+## Architecture
+
+The Query side uses a hexagonal shape. The host calls `QueryService`, which is the API. `QueryService` calls the ports. The ports are the SPI. Adapters implement the ports.
+
+```mermaid
+flowchart LR
+    Host["Host"]
+    QS["QueryService (api)"]
+    FS["FieldSource (port)"]
+    SFS["SchemaFieldSource"]
+    BP["BrowsePort (spi)"]
+    RP["ReadPort (spi)"]
+    IP["IndexPreparationPort (spi)"]
+    PG["Postgres adapters"]
+    MEM["In-memory adapters (query-testkit)"]
+
+    Host --> QS
+    QS --> FS
+    FS --> SFS
+    QS --> BP
+    QS --> RP
+    QS --> IP
+    BP --> PG
+    RP --> PG
+    IP --> PG
+    BP -.-> MEM
+    RP -.-> MEM
+    IP -.-> MEM
+```
+
+The Postgres adapters are `PostgresBrowsePort`, `PostgresReadPort`, and `PostgresIndexPreparation`. They are the production adapters. The dotted lines show the in-memory adapters, which tests use.
+
+### Browse flow
+
+`QueryService.browse` resolves the scope, checks the query against the scope, and then calls `BrowsePort.browse`. The port is not called when the check finds a problem.
+
+```mermaid
+sequenceDiagram
+    participant Host
+    participant QS as DefaultQueryService
+    participant FS as FieldSource
+    participant PB as PostgresBrowsePort
+    participant DB as sq_object
+
+    Host->>QS: browse(request, query)
+    QS->>FS: resolve(request)
+    FS-->>QS: FieldScope
+    QS->>QS: check filter, sorts, and facets against the scope
+    alt the check finds problems
+        QS-->>Host: InvalidQueryException
+    else the query is valid
+        QS->>PB: browse(scope, query)
+        PB->>PB: rejectUnsupportedShapes(query)
+        PB->>DB: count the matching objects
+        PB->>DB: select the page of items
+        PB->>DB: select the facet buckets, one query per facet
+        PB-->>QS: BrowseResult
+        QS-->>Host: BrowseResult
+    end
+```
+
+### Prepare flow
+
+`QueryService.prepare` lists the root classes of the tenant and resolves each root class. It applies the version guard before it calls `IndexPreparationPort`.
+
+```mermaid
+sequenceDiagram
+    participant Host
+    participant QS as DefaultQueryService
+    participant FS as FieldSource
+    participant IP as IndexPreparationPort
+
+    Host->>QS: prepare(tenant, version)
+    QS->>FS: rootClasses(tenant)
+    FS-->>QS: list of ClassRef
+    QS->>QS: reject a duplicate root class
+    loop each root class
+        QS->>FS: resolve(request with VersionPolicy Union)
+        FS-->>QS: FieldScope
+        alt the scope does not list the version
+            QS-->>Host: IndexPreparationResult.EMPTY
+            Note over QS,IP: the port is not called for this version
+        end
+    end
+    QS->>IP: prepare(tenant, version, rootFields)
+    IP-->>QS: IndexPreparationResult
+    QS-->>Host: IndexPreparationResult
+```
+
+## Contracts
+
+The Query side has 3 contracts. The API is what the host calls. The SPI is what adapters implement. The Field contract is the vocabulary that both sides share.
+
+### API for hosts
+
+The API is in the package `org.sequeless.query.api` of `query-core`. `QueryService` is the entry point. `DefaultQueryService` implements it.
+
+| Method | Returns | What it does | Throws |
+|---|---|---|---|
+| `browse(FieldScopeRequest request, BrowseQuery query)` | `BrowseResult` | Resolves the scope, checks the query against the scope, and runs the browse. | `InvalidQueryException` (the port is not called), `FieldResolutionException`, `NullPointerException` |
+| `read(Scope scope, ReadRequest request)` | `Optional<ObjectView>` | Reads one object by identifier. The result is empty when the object does not exist, is soft-deleted, or belongs to another tenant. | `NullPointerException` |
+| `prepare(TenantId tenant, OntologyVersionRef version)` | `IndexPreparationResult` | Prepares the index structures for the root classes of the tenant. Returns `IndexPreparationResult.EMPTY`, without a port call, when the version is superseded. | `IllegalArgumentException` (duplicate root class), `IllegalStateException` (resolved root differs from the listed root), `FieldResolutionException`, `NullPointerException` |
+
+The value records of the API are these:
+
+| Record | What it holds | Rules |
+|---|---|---|
+| `BrowseQuery` | `Optional<FilterNode> filter`, `Optional<String> text`, `List<Sort> sorts`, `Page page`, `List<FieldPath> facets` | The `sorts` and `facets` lists are copied. No component is `null`. |
+| `BrowseResult` | `List<ObjectView> items`, `long total`, `Map<FieldPath, List<FacetBucket>> facets` | The `total` counts all matching objects, not only the page. |
+| `ObjectView` | `ObjectId id`, `TypeRef type`, `TenantId tenant`, `long version`, `Optional<String> state`, `Map<PropertyRef, Value> properties`, `Audit audit`, `boolean deleted` | Reference components must not be null. `version` must be 1 or greater. |
+| `ReadRequest` | `ObjectId id` | None. |
+| `Page` | `int number`, `int size` | The `number` is 0-based and must not be negative. The `size` must be from 1 to 500. |
+| `Sort` | `FieldPath path`, `Direction direction` | `Direction` is `ASC` or `DESC`. |
+| `FacetBucket` | `String value`, `long count` | None. |
+| `Audit` | `Instant createdAt`, `String createdBy`, `Instant updatedAt`, `String updatedBy` | None. |
+| `PropertyRef`, `TypeRef` | An `iri` string | None. |
+| `IndexPreparationResult` | `List<FieldPath> newlyRegistered` | The constant `EMPTY` has an empty list. |
+
+`InvalidQueryException` extends `RuntimeException`. Its method `problems()` returns the list of problems as strings. The public helpers `FieldKey` and `FieldRegistries.of(FieldScope)` are also in the package `api`. The Postgres adapter calls `FieldRegistries.of`.
+
+A host that does not use Spring calls `QueryServiceFactory.create(FieldSource, BrowsePort, ReadPort, IndexPreparationPort)` to get a `QueryService`.
+
+### SPI for adapters
+
+The Query ports are in the package `org.sequeless.query.spi` of `query-core`. The `FieldSource` port is in the package `org.sequeless.query.field.spi` of `query-field`.
+
+| Port | Production implementation | Test implementation |
+|---|---|---|
+| `BrowsePort` | `PostgresBrowsePort` | `InMemoryBrowsePort` |
+| `ReadPort` | `PostgresReadPort` | `InMemoryReadPort` |
+| `IndexPreparationPort` | `PostgresIndexPreparation` | `InMemoryIndexPreparationPort`, which also has `awaitPrepared()` |
+| `FieldSource` | `SchemaFieldSource` | `InMemoryFieldSource` |
+| `ConceptSource` | None | `InMemoryConceptSource` |
+
+The Postgres adapters are in `query-postgres-jsonb-adapter`. The in-memory Query adapters are in `query-testkit`. `SchemaFieldSource` is in `query-schema-adapter`. `InMemoryFieldSource` and `InMemoryConceptSource` are in `query-field-testfixtures`.
+
+Each port puts these obligations on an adapter:
+
+- `BrowsePort.browse(FieldScope scope, BrowseQuery query)`:
+  - The adapter must throw `NullPointerException` for a `null` argument.
+  - The adapter must take the tenant from `scope.request().tenantId()`.
+  - The adapter must not return soft-deleted objects.
+  - The adapter must throw `InvalidQueryException` for a filter node other than `AndFilter`, `OrFilter`, or `FieldFilter`.
+  - The adapter must throw `InvalidQueryException` for a traversal path in a filter, sort, or facet.
+  - The adapter must throw `InvalidQueryException` for the `like` and `not like` operators.
+  - A page past the last page returns empty items and the correct total. It does not throw.
+- `ReadPort.read(Scope scope, ReadRequest request)`:
+  - The adapter must throw `NullPointerException` for a `null` argument.
+  - The adapter must return an empty result for a missing, soft-deleted, or other-tenant object.
+- `IndexPreparationPort.prepare(TenantId tenant, OntologyVersionRef version, Map<ClassRef, List<Field>> rootFields)`:
+  - The adapter must throw `NullPointerException` for a `null` argument. It must also throw it for a `null` map key or value.
+  - The call must be idempotent. A repeat call with the same version returns an empty `newlyRegistered`.
+  - The adapter must not check the version against the Fields.
+
+The `BrowseContract`, `ReadContract`, and `IndexPreparationContract` classes in `query-testkit` test these obligations.
+
+### Field contract
+
+The Field contract is in `query-field`. A caller sends a `FieldScopeRequest` to a `FieldSource`. The `FieldSource` returns a `FieldScope`.
+
+- `FieldScopeRequest` holds `TenantId tenantId`, `ClassRef root`, `VersionPolicy versionPolicy`, `TraversalConfig traversal`, `Optional<Principal> principal`, and `Optional<Locale> locale`.
+- `FieldScope` holds the root class, the `Field` list (`facets`), the `Relationship` list, a `stamp`, the `ontologyVersions`, the `concreteTypes`, and the request that created it.
+- `Field` describes one queryable property. It has a `FieldPath`, a `FieldType`, a `Cardinality`, `Capabilities`, labels, and a set `definedInVersions`. The set `definedInVersions` must not be empty.
+- `FieldPath` is a list of `PathSegment` records. A path with more than 1 segment traverses relationships. The method `isTraversing` tests this.
+- `Relationship` describes an edge that a caller can follow. It names the target `ClassRef` and the versions that define the edge.
+
+```mermaid
+classDiagram
+    class FieldScopeRequest {
+        TenantId tenantId
+        ClassRef root
+        VersionPolicy versionPolicy
+        TraversalConfig traversal
+    }
+    class FieldScope {
+        ClassRef root
+        List~Field~ facets
+        List~Relationship~ relationships
+        String stamp
+        FieldScopeRequest request
+    }
+    class Field {
+        FieldPath path
+        FieldType type
+        Capabilities capabilities
+        Set~OntologyVersionRef~ definedInVersions
+    }
+    class Relationship {
+        ClassRef targetClass
+        Cardinality cardinality
+    }
+    class FieldPath {
+        List~PathSegment~ segments
+    }
+    class ClassRef {
+        UUID id
+        String slug
+        String iri
+    }
+
+    FieldScope --> FieldScopeRequest : request
+    FieldScope --> ClassRef : root
+    FieldScope "1" o-- "*" Field : facets
+    FieldScope "1" o-- "*" Relationship : relationships
+    FieldScopeRequest --> ClassRef : root
+    Field --> FieldPath : path
+    Relationship --> ClassRef : targetClass
+    FieldPath --> ClassRef : segment targetClass
+```
+
+The `VersionPolicy` of the request decides how `FieldSource` reconciles ontology versions:
+
+- `Union` merges the Fields of all versions in scope. It matches Fields by property identifier, not by slug. The documentation calls it the default, but no code selects it implicitly. Each request must name a VersionPolicy.
+- `Pinned(OntologyVersionRef version)` resolves against exactly 1 version. `SchemaFieldSource` raises `VERSION_NOT_FOUND` when that version is not active. It raises `UNKNOWN_PATH` when a path names a missing property.
+- `Intersection` keeps only the Fields that every version defines. The documentation says it fails with `EMPTY_INTERSECTION` when no Field remains. No production `FieldSource` enforces this rule. `SchemaFieldSource` resolves `Intersection` like `Union`.
+
+`FieldSource` has 4 methods and no default methods:
+
+| Method | Returns | Question it answers |
+|---|---|---|
+| `resolve(FieldScopeRequest request)` | `FieldScope` | Which Fields and relationships does the root class have? |
+| `expand(FieldScope scope, FieldPath relationship)` | `FieldScope` | Which Fields does the scope have after it follows 1 relationship? |
+| `describe(FieldScopeRequest request, FieldPath path)` | `Field` | What is the Field at 1 path? |
+| `rootClasses(TenantId tenant)` | `List<ClassRef>` | Which root classes does the tenant have? |
+
+Every `FieldSource` error is a `FieldResolutionException` that carries a `FieldErrorCode`. The enum has 12 constants. `ConceptSource` has the methods `concepts` and `concept`. It throws only `SCHEME_UNAVAILABLE`.
+
+### Known gaps
+
+- `FieldSource.expand` and `FieldSource.describe` have no production caller. Only tests and test fixtures call them. `DefaultQueryService` calls `resolve` and `rootClasses`.
+- `SchemaFieldSource` does not raise `EDGE_NOT_WALKABLE`, `PRINCIPAL_DENIED`, `EMPTY_INTERSECTION`, or `SCHEME_UNAVAILABLE`. The in-memory fixtures raise `EDGE_NOT_WALKABLE`, `PRINCIPAL_DENIED`, and `EMPTY_INTERSECTION`. Only the in-memory concept source raises `SCHEME_UNAVAILABLE`.
+- `ConceptSource` has no production implementation and no bean. Only test code uses it.
+- Each Query port has 2 implementations. Use the Postgres adapters for production. Use the in-memory classes of `query-testkit` for tests.
 
 ## Use in a Spring Boot host
 
@@ -176,5 +440,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the setup, the workflow, and the comm
 - Each module has its own version. release-please sets the versions from Conventional Commit titles. You must not edit a `CHANGELOG.md` by hand.
 - The `query-testkit` module provides contract tests: `BrowseContract`, `ReadContract`, and `IndexPreparationContract`. An adapter extends a contract and supplies its environment.
 - The `query-field-testfixtures` module provides `FieldSourceContractTest` and `ConceptSourceContractTest`. A `FieldSource` implementation extends them to check its behavior.
-- `FieldSource` has 3 methods: `resolve`, `expand`, and `describe`. Each method answers a different question.
+- `FieldSource` has 4 methods: `resolve`, `expand`, `describe`, and `rootClasses`. Each method answers a different question.
 - Apache License 2.0 applies to this repository. See [LICENSE](LICENSE).
