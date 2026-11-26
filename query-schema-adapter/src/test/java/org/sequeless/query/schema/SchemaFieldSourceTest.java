@@ -1055,6 +1055,38 @@ class SchemaFieldSourceTest {
         assertCode(() -> source.expand(root, path(segment("owner", "Company"))), FieldErrorCode.CLASS_NOT_REACHABLE);
     }
 
+    @Test
+    void expandFromTheRootRefusesACallerTargetThatDiffersFromTheEdgeTargetAndWalksNothing() {
+        FieldSource source = source(schema(
+                1,
+                type("Work", true, List.of(), relationship("owner", "Person")),
+                concreteType("Person", attribute("name", Datatype.STRING, true, true)),
+                concreteType("Company", attribute("legalName", Datatype.STRING, true, true))));
+        FieldScope root = source.resolve(request("Work"));
+
+        // The edge goes to Person. A caller naming Company is refused; without the comparison the walk would enter
+        // Person and return a scope, and this assertion would fail.
+        assertCode(() -> source.expand(root, path(segment("owner", "Company"))), FieldErrorCode.CLASS_NOT_REACHABLE);
+        // The matching target still walks.
+        FieldScope expanded = source.expand(root, path(segment("owner", "Person")));
+        assertThat(facetNamed(expanded, "owner.name").type()).isEqualTo(FieldType.STRING);
+    }
+
+    @Test
+    void describeOfARootHopRefusesACallerTargetThatDiffersFromTheEdgeTarget() {
+        FieldSource source = source(schema(
+                1,
+                type("Work", true, List.of(), relationship("owner", "Person")),
+                concreteType("Person", attribute("name", Datatype.STRING, true, true)),
+                concreteType("Company", attribute("legalName", Datatype.STRING, true, true))));
+
+        assertCode(
+                () -> source.describe(request("Work"), path(segment("owner", "Company"), segment("name", null))),
+                FieldErrorCode.CLASS_NOT_REACHABLE);
+        Field field = source.describe(request("Work"), path(segment("owner", "Person"), segment("name", null)));
+        assertThat(field.path().asSlugPath()).isEqualTo("owner.name");
+    }
+
     private static FieldSource source(Schema schema) {
         return new SchemaFieldSource(new FakeSchemaSource(Map.of(TENANT, schema)));
     }

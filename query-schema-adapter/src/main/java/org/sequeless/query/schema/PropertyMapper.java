@@ -95,9 +95,9 @@ final class PropertyMapper {
     }
 
     /**
-     * The Relationships a root's FieldScope walks: one per relationship IRI on which every declaring type
-     * agrees. A relationship whose declarations conflict is left out, because no single target can be
-     * walked into. Its Field is still listed by {@link #unionFields}, with every capability false.
+     * The Relationships a root's FieldScope walks: one per group, as {@link #groupByIri} makes it, that agrees. A
+     * relationship whose declarations conflict is left out, because no single target can be walked into. Its
+     * Field is still listed by {@link #unionFields}, with every capability false.
      *
      * <p>An agreeing relationship takes its label from the first definition in root-first order, the same
      * rule {@link #unionField(FieldPath, List)} applies to its Field.

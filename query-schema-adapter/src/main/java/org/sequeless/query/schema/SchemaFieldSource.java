@@ -105,6 +105,12 @@ public final class SchemaFieldSource implements FieldSource {
             if (!(definitions.get(0) instanceof RelationshipDefinition edge)) {
                 throw new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, relationship);
             }
+            // A root hop names its target too. A caller target that is not the edge's target is refused before the
+            // walk enters anything. Deeper hops are not compared; that is a pre-existing gap.
+            if (index == 0 && !segment.targetClass().iri().equals(edge.targetTypeIri())) {
+                throw new FieldResolutionException(
+                        FieldErrorCode.CLASS_NOT_REACHABLE, relationship, segment.targetClass());
+            }
             walk.checkRevisit(view.targetRef(edge.targetTypeIri()));
             walk.checkDepth(index);
             walk.enter(edge);
@@ -154,6 +160,13 @@ public final class SchemaFieldSource implements FieldSource {
             if (!terminal) {
                 // Only a hop that walks into a relationship is guarded; the terminal segment is never walked into.
                 RelationshipDefinition relationship = (RelationshipDefinition) property;
+                // A root hop names its target too; a null target is not compared here, as before. Deeper hops are
+                // not compared, which is a pre-existing gap.
+                if (index == 0
+                        && segment.targetClass() != null
+                        && !segment.targetClass().iri().equals(relationship.targetTypeIri())) {
+                    throw new FieldResolutionException(FieldErrorCode.CLASS_NOT_REACHABLE, path, segment.targetClass());
+                }
                 walk.checkRevisit(view.targetRef(relationship.targetTypeIri()));
                 walk.checkDepth(index);
                 walk.enter(relationship);
