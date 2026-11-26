@@ -66,7 +66,7 @@ final class TestFields {
         return new PathSegment(UUID.nameUUIDFromBytes(iri.getBytes(StandardCharsets.UTF_8)), iri, iri, targetClass);
     }
 
-    private static ClassRef classRef(String iri) {
+    static ClassRef classRef(String iri) {
         return new ClassRef(
                 UUID.nameUUIDFromBytes(iri.getBytes(StandardCharsets.UTF_8)), iri, iri, new LocalizedText(iri, "en"));
     }

@@ -160,6 +160,10 @@ class PostgresIndexPreparationIT extends AbstractPostgresIT {
         assertThat(result.newlyRegistered()).containsExactly(dueDate.path());
         assertThat(searchRegistrations()).containsExactly(DUE_DATE);
         assertThat(indexRegistrations()).isEmpty();
+        // The same roots again register nothing new.
+        assertThat(port().prepare(TENANT, V1, Map.of(TASK, List.of(dueDate), PROJECT, List.of(dueDate)))
+                        .newlyRegistered())
+                .isEmpty();
     }
 
     @Test
@@ -236,9 +240,9 @@ class PostgresIndexPreparationIT extends AbstractPostgresIT {
             dropRegistryInsertFailure();
         }
 
-        assertThat(indexNamesInDatabase()).doesNotContain(PostgresIndexPreparation.indexNameFor("tenant-1", STATUS));
         assertThat(indexNamesInDatabase()).isEmpty();
         assertThat(indexRegistrations()).isEmpty();
+        assertThat(searchRegistrations()).isEmpty();
     }
 
     private static PostgresIndexPreparation port() {

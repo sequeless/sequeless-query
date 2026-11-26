@@ -28,10 +28,9 @@ import org.sequeless.query.spi.IndexPreparationPort;
  * The mechanical form of the clauses of {@link IndexPreparationPort}'s interface-level javadoc that
  * the port exposes: null handling, the result (the newly registered searchable Fields, one per
  * distinct search key, sorted by that key), idempotence, immutability, the version not being checked
- * against the Fields, and
- * per-tenant registration. Every {@link IndexPreparationPort} implementation, adapter or test double,
- * is expected to satisfy them, and this class exercises each one against whatever {@link Environment}
- * {@link #freshEnvironment()} supplies.
+ * against the Fields, and per-tenant registration. Every {@link IndexPreparationPort} implementation,
+ * adapter or test double, is expected to satisfy them, and this class exercises each one against
+ * whatever {@link Environment} {@link #freshEnvironment()} supplies.
  *
  * <p>This contract does not assert index structures or derived state, such as expression indexes, DDL
  * or a search backfill. Each adapter's own tests assert those (spec 14, section 6.2, Q24).
@@ -159,6 +158,8 @@ public abstract class IndexPreparationContract {
         IndexPreparationResult result = prepare(env, TENANT, V1, roots);
 
         assertThat(result.newlyRegistered()).containsExactly(dueDate.path());
+        // The same roots again register nothing new: the one registration of the Field is still the only one.
+        assertThat(prepare(env, TENANT, V1, roots).newlyRegistered()).isEmpty();
     }
 
     @Test

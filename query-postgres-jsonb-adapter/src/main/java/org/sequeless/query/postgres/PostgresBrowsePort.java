@@ -33,9 +33,9 @@ import org.springframework.jdbc.core.simple.JdbcClient;
  *
  * <p>Result order is the one {@code BrowsePort} states. Ids compare as {@code uuid}, which Postgres orders by unsigned
  * bytes, so a sort on an id matches the contract. Soft-deleted objects are never read, and the tenant is the scope's.
- * Text search matches {@code search_vector}, which the trigger fills from the tenant's searchable registrations (spec 14,
- * Q22). That is a known difference from the in-memory reference, which reads the root's own searchable Fields, and it is
- * pinned in step 2b.
+ * Text search matches {@code search_vector}, which the trigger fills from every property the tenant registers as searchable,
+ * whatever class it belongs to (spec 14, Q22 and Q29). That is a known difference from the in-memory reference, which reads
+ * only the root's own searchable Fields. {@code PostgresTextSearchKnownLimitIT} pins it.
  *
  * <p>Each statement runs on its own connection use, so the count and the page are not one snapshot. The adapter takes
  * no transaction, because the browse reads and never writes.

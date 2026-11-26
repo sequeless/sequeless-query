@@ -16,10 +16,9 @@ import org.sequeless.query.field.api.OntologyVersionRef;
  * <p>This javadoc is the full behavioural contract every implementation must satisfy. The
  * query-testkit's {@code IndexPreparationContract} asserts the clauses that the port exposes: null
  * handling, the result (the newly registered searchable Fields, one per distinct search key, sorted
- * by that key), idempotence,
- * immutability, the version not being checked against the Fields, and per-tenant registration. It does
- * not assert index structures or derived state. Each adapter's own tests assert its index DDL and its
- * completion (spec 14, section 6.2).
+ * by that key), idempotence, immutability, the version not being checked against the Fields, and
+ * per-tenant registration. It does not assert index structures or derived state. Each adapter's own
+ * tests assert its index DDL and its completion (spec 14, section 6.2).
  *
  * <ul>
  *   <li><b>Null handling.</b> Every argument must be non-{@code null}. A conforming implementation
