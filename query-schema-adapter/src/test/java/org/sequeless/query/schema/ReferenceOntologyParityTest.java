@@ -139,7 +139,7 @@ class ReferenceOntologyParityTest {
         return usability;
     }
 
-    private static FieldScope resolve(Schema schema, String rootIri) {
+    static FieldScope resolve(Schema schema, String rootIri) {
         String localName = rootIri.substring(SchemaFixtures.NS.length());
         return new SchemaFieldSource(new FakeSchemaSource(Map.of(TENANT, schema))).resolve(request(localName));
     }
@@ -173,7 +173,7 @@ class ReferenceOntologyParityTest {
     }
 
     // reference.ttl:43-46. Deliverable lists its own title and createdAt.
-    private static TypeDefinition deliverable() {
+    static TypeDefinition deliverable() {
         return type(
                 "Deliverable",
                 true,
@@ -184,7 +184,7 @@ class ReferenceOntologyParityTest {
 
     // reference.ttl:48-55. WorkItem lists its inherited title and createdAt, its status (restriction :53), and
     // description.
-    private static TypeDefinition workItem() {
+    static TypeDefinition workItem() {
         return type(
                 "WorkItem",
                 true,
@@ -197,7 +197,7 @@ class ReferenceOntologyParityTest {
 
     // reference.ttl:57-75. Task narrows title to a minimum of one (:60-62) and restricts its own single-valued
     // properties.
-    private static TypeDefinition task() {
+    static TypeDefinition task() {
         return type(
                 "Task",
                 false,
@@ -214,7 +214,7 @@ class ReferenceOntologyParityTest {
     }
 
     // reference.ttl:77-89. Project lists its inherited properties and its own, with restrictions at :80-88.
-    private static TypeDefinition project() {
+    static TypeDefinition project() {
         return type(
                 "Project",
                 false,
@@ -230,7 +230,7 @@ class ReferenceOntologyParityTest {
     }
 
     // reference.ttl:91-100.
-    private static TypeDefinition person() {
+    static TypeDefinition person() {
         return concreteType(
                 "Person",
                 attribute(
