@@ -120,8 +120,14 @@ class FieldScopeTest {
     @Test
     void facetScopeDefensiveCopyIsolatesFromSourceMutation() {
         List<Field> facets = new ArrayList<>(List.of(facet("status")));
-        FieldScope scope =
-                new FieldScope(classRef("Invoice"), facets, new ArrayList<>(), "stamp", Set.of(V1), request("acme"));
+        FieldScope scope = new FieldScope(
+                classRef("Invoice"),
+                facets,
+                new ArrayList<>(),
+                "stamp",
+                Set.of(V1),
+                Set.of(classRef("Invoice")),
+                request("acme"));
 
         facets.add(facet("total"));
 
@@ -130,9 +136,34 @@ class FieldScopeTest {
 
     @Test
     void facetScopeRejectsBlankStamp() {
-        assertThatThrownBy(() ->
-                        new FieldScope(classRef("Invoice"), List.of(), List.of(), "  ", Set.of(V1), request("acme")))
+        assertThatThrownBy(() -> new FieldScope(
+                        classRef("Invoice"),
+                        List.of(),
+                        List.of(),
+                        "  ",
+                        Set.of(V1),
+                        Set.of(classRef("Invoice")),
+                        request("acme")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("stamp");
+    }
+
+    @Test
+    void facetScopeRejectsNullConcreteTypes() {
+        assertThatThrownBy(() -> new FieldScope(
+                        classRef("Invoice"), List.of(), List.of(), "stamp", Set.of(V1), null, request("acme")))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("concreteTypes");
+    }
+
+    @Test
+    void facetScopeDefensiveCopyOfConcreteTypesIsolatesFromSourceMutation() {
+        Set<ClassRef> concreteTypes = new HashSet<>(Set.of(classRef("Invoice")));
+        FieldScope scope = new FieldScope(
+                classRef("Invoice"), List.of(), List.of(), "stamp", Set.of(V1), concreteTypes, request("acme"));
+
+        concreteTypes.add(classRef("CreditNote"));
+
+        assertThat(scope.concreteTypes()).containsExactly(classRef("Invoice"));
     }
 }

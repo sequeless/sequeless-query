@@ -110,6 +110,7 @@ Every module follows ADR kernel 0001, the package name follows the repo segment:
 | `FacetPath` | `FieldPath` | |
 | `FacetType` | `FieldType` | |
 | `FacetScope` | `FieldScope` | `ontologyVersions` becomes `Set<OntologyVersionRef>` (Q11) |
+| `FieldScope` | gains `concreteTypes` (Set of ClassRef, the root and its concrete subtypes; empty for an abstract root with no concrete subtypes) | Q15 |
 | `FacetScopeRequest` | `FieldScopeRequest` | `tenantId` becomes kernel-identity `TenantId` (Q8). `Optional<Principal>` uses kernel-identity's `Principal` |
 | `FacetConflict` | `FieldConflict` | |
 | `FacetErrorCode` | `FieldErrorCode` | |

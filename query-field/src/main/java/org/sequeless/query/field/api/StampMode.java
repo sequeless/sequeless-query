@@ -20,16 +20,19 @@ package org.sequeless.query.field.api;
 public enum StampMode {
 
     /**
-     * The stamp is the ontology versions in scope, sorted and joined. Simple, and correct as
-     * long as nothing besides the versions varies between two resolutions that should compare
-     * equal. This is the default.
+     * The stamp is the ontology versions in scope, sorted numerically and joined with {@code ,},
+     * followed, when {@code FieldScope.concreteTypes} is non-empty, by {@code |concreteTypes:} and
+     * the concrete types' IRIs sorted and joined with {@code ,}. Simple, and correct as long as
+     * nothing besides the versions and the concrete types varies between two resolutions that
+     * should compare equal. This is the default.
      */
     VERSION_ONLY,
 
     /**
-     * The stamp is a hash over the ontology versions, the traversal configuration, the version
-     * policy, the tenant, and the principal. Correct when any of those may vary per call — in
-     * particular, required for correctness once RBAC facet filtering is enabled.
+     * The stamp is a hash over the ontology versions, the concrete types, the traversal
+     * configuration, the version policy, the tenant, the root, and the principal. Correct when any
+     * of those may vary per call — in particular, required for correctness once RBAC facet
+     * filtering is enabled.
      */
     CONTENT_HASH
 }

@@ -34,6 +34,8 @@ import java.util.Set;
  *     nothing recorded to compare against.
  * @param ontologyVersions the ontology versions that contributed to this scope; never {@code
  *     null}, may be empty only if no version-defined content is in scope
+ * @param concreteTypes the root class and its concrete subtypes, the classes a Browse may match;
+ *     empty when the root is abstract and has no concrete subtypes; never {@code null}
  * @param request the request this scope was resolved from, echoed back so the scope can be
  *     re-expanded (for example by {@code FieldSource.expand}) without the caller having to
  *     reassemble it; never {@code null}
@@ -44,13 +46,14 @@ public record FieldScope(
         List<Relationship> relationships,
         String stamp,
         Set<OntologyVersionRef> ontologyVersions,
+        Set<ClassRef> concreteTypes,
         FieldScopeRequest request) {
 
     /**
-     * Validates {@code root}, {@code stamp}, and {@code request} are present, defensively copies
-     * {@code facets} and {@code relationships} (which also null-checks each list and every
-     * element), defensively copies {@code ontologyVersions} (which also null-checks the set and
-     * every element), and rejects a blank {@code stamp}.
+     * Validates {@code root}, {@code stamp}, {@code concreteTypes}, and {@code request} are present,
+     * defensively copies {@code facets} and {@code relationships} (which also null-checks each list
+     * and every element), defensively copies {@code ontologyVersions} and {@code concreteTypes}
+     * (which also null-check each set and every element), and rejects a blank {@code stamp}.
      */
     public FieldScope {
         Objects.requireNonNull(root, "root must not be null");
@@ -61,6 +64,8 @@ public record FieldScope(
             throw new IllegalArgumentException("stamp must not be blank");
         }
         ontologyVersions = Set.copyOf(ontologyVersions); // null-checks the set and every element
+        Objects.requireNonNull(concreteTypes, "concreteTypes must not be null");
+        concreteTypes = Set.copyOf(concreteTypes); // null-checks every element
         Objects.requireNonNull(request, "request must not be null");
     }
 }

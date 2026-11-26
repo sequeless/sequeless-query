@@ -27,6 +27,12 @@ class StampCalculatorTest {
     private static final OntologyVersionRef V1 = new OntologyVersionRef(1);
     private static final OntologyVersionRef V2 = new OntologyVersionRef(2);
     private static final OntologyVersionRef V3 = new OntologyVersionRef(3);
+    private static final UUID SUBTYPE_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    /** The root alone: the concrete types of a root with no concrete subtypes. */
+    private static final Set<ClassRef> ROOT_ONLY = Set.of(classRef(ROOT_ID, "Invoice"));
+    /** The root and one concrete subtype, which must stamp differently from {@link #ROOT_ONLY}. */
+    private static final Set<ClassRef> ROOT_AND_SUBTYPE =
+            Set.of(classRef(ROOT_ID, "Invoice"), classRef(SUBTYPE_ID, "CreditNote"));
 
     private static ClassRef classRef(UUID id, String slug) {
         return new ClassRef(id, slug, "urn:class:" + slug, new LocalizedText(slug, "en"));
@@ -63,7 +69,7 @@ class StampCalculatorTest {
                 Optional.empty(),
                 Optional.empty());
 
-        String stamp = StampCalculator.stamp(request, Set.of(V2, V1));
+        String stamp = StampCalculator.stamp(request, Set.of(V2, V1), Set.of());
 
         assertThat(stamp).isEqualTo("1,2");
     }
@@ -78,7 +84,7 @@ class StampCalculatorTest {
                 Optional.empty(),
                 Optional.empty());
 
-        String stamp = StampCalculator.stamp(request, Set.of(new OntologyVersionRef(10), V2, V1));
+        String stamp = StampCalculator.stamp(request, Set.of(new OntologyVersionRef(10), V2, V1), Set.of());
 
         assertThat(stamp).isEqualTo("1,2,10");
     }
@@ -93,8 +99,8 @@ class StampCalculatorTest {
                 Optional.empty(),
                 Optional.empty());
 
-        String forward = StampCalculator.stamp(request, Set.of(V1, V2, V3));
-        String backward = StampCalculator.stamp(request, Set.of(V3, V2, V1));
+        String forward = StampCalculator.stamp(request, Set.of(V1, V2, V3), Set.of());
+        String backward = StampCalculator.stamp(request, Set.of(V3, V2, V1), Set.of());
 
         assertThat(forward).isEqualTo(backward);
     }
@@ -109,22 +115,23 @@ class StampCalculatorTest {
                 Optional.empty(),
                 Optional.empty());
 
-        String stamp = StampCalculator.stamp(request, Set.of());
+        String stamp = StampCalculator.stamp(request, Set.of(), Set.of());
 
         assertThat(stamp).isEqualTo("unversioned");
     }
 
     @Test
     void contentHashMatchesKnownDigestForFixedInput() {
-        String stamp = StampCalculator.stamp(fixedInputRequest(), Set.of(V1, V2));
+        String stamp = StampCalculator.stamp(fixedInputRequest(), Set.of(V1, V2), ROOT_ONLY);
 
-        assertThat(stamp).isEqualTo("sha256:12e6a5bacba7d9a08c6b714f64a523b603db9804b4cb35d667b37d9ccef2f815");
+        // The digest changed for the concreteTypes addition (Q15).
+        assertThat(stamp).isEqualTo("sha256:3b1bcfa37031c255f2c646d9ab27d5ff6d9074e7d13c2716f1244ece9e70b788");
     }
 
     @Test
     void contentHashIsOrderIndependentForVersionsSet() {
-        String forward = StampCalculator.stamp(fixedInputRequest(), Set.of(V1, V2));
-        String backward = StampCalculator.stamp(fixedInputRequest(), Set.of(V2, V1));
+        String forward = StampCalculator.stamp(fixedInputRequest(), Set.of(V1, V2), ROOT_ONLY);
+        String backward = StampCalculator.stamp(fixedInputRequest(), Set.of(V2, V1), ROOT_ONLY);
 
         assertThat(forward).isEqualTo(backward);
     }
@@ -136,8 +143,8 @@ class StampCalculatorTest {
         Set<OntologyVersionRef> nineThenTen =
                 new LinkedHashSet<>(List.of(new OntologyVersionRef(9), new OntologyVersionRef(10)));
 
-        String forward = StampCalculator.stamp(fixedInputRequest(), tenThenNine);
-        String backward = StampCalculator.stamp(fixedInputRequest(), nineThenTen);
+        String forward = StampCalculator.stamp(fixedInputRequest(), tenThenNine, ROOT_ONLY);
+        String backward = StampCalculator.stamp(fixedInputRequest(), nineThenTen, ROOT_ONLY);
 
         assertThat(forward).isEqualTo(backward);
     }
@@ -159,8 +166,8 @@ class StampCalculatorTest {
                 Optional.of(new Principal("u-42", Set.of("admin", "analyst"))),
                 Optional.empty());
 
-        String forward = StampCalculator.stamp(forwardRequest, Set.of(V1));
-        String backward = StampCalculator.stamp(backwardRequest, Set.of(V1));
+        String forward = StampCalculator.stamp(forwardRequest, Set.of(V1), ROOT_ONLY);
+        String backward = StampCalculator.stamp(backwardRequest, Set.of(V1), ROOT_ONLY);
 
         assertThat(forward).isEqualTo(backward);
     }
@@ -177,8 +184,8 @@ class StampCalculatorTest {
                 Optional.empty());
 
         OntologyVersionRef versions = V1;
-        assertThat(StampCalculator.stamp(acme, Set.of(versions)))
-                .isNotEqualTo(StampCalculator.stamp(other, Set.of(versions)));
+        assertThat(StampCalculator.stamp(acme, Set.of(versions), ROOT_ONLY))
+                .isNotEqualTo(StampCalculator.stamp(other, Set.of(versions), ROOT_ONLY));
     }
 
     @Test
@@ -193,8 +200,8 @@ class StampCalculatorTest {
                 Optional.empty());
 
         OntologyVersionRef versions = V1;
-        assertThat(StampCalculator.stamp(first, Set.of(versions)))
-                .isNotEqualTo(StampCalculator.stamp(second, Set.of(versions)));
+        assertThat(StampCalculator.stamp(first, Set.of(versions), ROOT_ONLY))
+                .isNotEqualTo(StampCalculator.stamp(second, Set.of(versions), ROOT_ONLY));
     }
 
     @Test
@@ -209,8 +216,8 @@ class StampCalculatorTest {
                 Optional.empty());
 
         OntologyVersionRef versions = V1;
-        assertThat(StampCalculator.stamp(union, Set.of(versions)))
-                .isNotEqualTo(StampCalculator.stamp(pinned, Set.of(versions)));
+        assertThat(StampCalculator.stamp(union, Set.of(versions), ROOT_ONLY))
+                .isNotEqualTo(StampCalculator.stamp(pinned, Set.of(versions), ROOT_ONLY));
     }
 
     @Test
@@ -225,8 +232,8 @@ class StampCalculatorTest {
                 Optional.empty());
 
         OntologyVersionRef versions = V1;
-        assertThat(StampCalculator.stamp(depthThree, Set.of(versions)))
-                .isNotEqualTo(StampCalculator.stamp(depthFive, Set.of(versions)));
+        assertThat(StampCalculator.stamp(depthThree, Set.of(versions), ROOT_ONLY))
+                .isNotEqualTo(StampCalculator.stamp(depthFive, Set.of(versions), ROOT_ONLY));
     }
 
     @Test
@@ -241,8 +248,8 @@ class StampCalculatorTest {
                 Optional.empty());
 
         OntologyVersionRef versions = V1;
-        assertThat(StampCalculator.stamp(withPrincipal, Set.of(versions)))
-                .isNotEqualTo(StampCalculator.stamp(withoutPrincipal, Set.of(versions)));
+        assertThat(StampCalculator.stamp(withPrincipal, Set.of(versions), ROOT_ONLY))
+                .isNotEqualTo(StampCalculator.stamp(withoutPrincipal, Set.of(versions), ROOT_ONLY));
     }
 
     @Test
@@ -263,8 +270,8 @@ class StampCalculatorTest {
                 Optional.of(Locale.FRENCH));
 
         OntologyVersionRef versions = V1;
-        assertThat(StampCalculator.stamp(english, Set.of(versions)))
-                .isEqualTo(StampCalculator.stamp(french, Set.of(versions)));
+        assertThat(StampCalculator.stamp(english, Set.of(versions), ROOT_ONLY))
+                .isEqualTo(StampCalculator.stamp(french, Set.of(versions), ROOT_ONLY));
     }
 
     @Test
@@ -272,8 +279,8 @@ class StampCalculatorTest {
         FieldScopeRequest request = fixedInputRequest();
         Set<OntologyVersionRef> versions = Set.of(V1, V2);
 
-        String first = StampCalculator.stamp(request, versions);
-        String second = StampCalculator.stamp(request, versions);
+        String first = StampCalculator.stamp(request, versions, ROOT_ONLY);
+        String second = StampCalculator.stamp(request, versions, ROOT_ONLY);
 
         assertThat(first).isEqualTo(second);
     }
@@ -298,6 +305,64 @@ class StampCalculatorTest {
                 Optional.of(new Principal("c", Set.of())),
                 Optional.empty());
 
-        assertThat(StampCalculator.stamp(tenantA, Set.of())).isNotEqualTo(StampCalculator.stamp(tenantAb, Set.of()));
+        assertThat(StampCalculator.stamp(tenantA, Set.of(), ROOT_ONLY))
+                .isNotEqualTo(StampCalculator.stamp(tenantAb, Set.of(), ROOT_ONLY));
+    }
+
+    @Test
+    void versionOnlyAppendsConcreteTypesSortedByIriAfterTheVersions() {
+        FieldScopeRequest request = request(
+                "acme",
+                ROOT_ID,
+                new VersionPolicy.Union(),
+                new TraversalConfig(OptionalInt.of(3), true, StampMode.VERSION_ONLY, false),
+                Optional.empty(),
+                Optional.empty());
+        Set<ClassRef> insertedRootFirst =
+                new LinkedHashSet<>(List.of(classRef(ROOT_ID, "Invoice"), classRef(SUBTYPE_ID, "CreditNote")));
+
+        String stamp = StampCalculator.stamp(request, Set.of(V2, V1), insertedRootFirst);
+
+        assertThat(stamp).isEqualTo("1,2|concreteTypes:urn:class:CreditNote,urn:class:Invoice");
+    }
+
+    @Test
+    void versionOnlyDiffersWhenConcreteTypesDiffer() {
+        FieldScopeRequest request = request(
+                "acme",
+                ROOT_ID,
+                new VersionPolicy.Union(),
+                new TraversalConfig(OptionalInt.of(3), true, StampMode.VERSION_ONLY, false),
+                Optional.empty(),
+                Optional.empty());
+
+        assertThat(StampCalculator.stamp(request, Set.of(V1), ROOT_ONLY))
+                .isNotEqualTo(StampCalculator.stamp(request, Set.of(V1), ROOT_AND_SUBTYPE));
+    }
+
+    @Test
+    void contentHashDiffersWhenConcreteTypesDiffer() {
+        assertThat(StampCalculator.stamp(fixedInputRequest(), Set.of(V1), ROOT_ONLY))
+                .isNotEqualTo(StampCalculator.stamp(fixedInputRequest(), Set.of(V1), ROOT_AND_SUBTYPE));
+    }
+
+    @Test
+    void contentHashIsOrderIndependentForConcreteTypes() {
+        Set<ClassRef> forward =
+                new LinkedHashSet<>(List.of(classRef(ROOT_ID, "Invoice"), classRef(SUBTYPE_ID, "CreditNote")));
+        Set<ClassRef> backward =
+                new LinkedHashSet<>(List.of(classRef(SUBTYPE_ID, "CreditNote"), classRef(ROOT_ID, "Invoice")));
+
+        assertThat(StampCalculator.stamp(fixedInputRequest(), Set.of(V1), forward))
+                .isEqualTo(StampCalculator.stamp(fixedInputRequest(), Set.of(V1), backward));
+    }
+
+    @Test
+    void contentHashCountsAnIriOnceWhenTwoClassRefsShareItAndDifferOnlyInLabel() {
+        ClassRef english = new ClassRef(ROOT_ID, "Invoice", "urn:class:Invoice", new LocalizedText("Invoice", "en"));
+        ClassRef french = new ClassRef(ROOT_ID, "Invoice", "urn:class:Invoice", new LocalizedText("Facture", "fr"));
+
+        assertThat(StampCalculator.stamp(fixedInputRequest(), Set.of(V1), Set.of(english, french)))
+                .isEqualTo(StampCalculator.stamp(fixedInputRequest(), Set.of(V1), Set.of(english)));
     }
 }

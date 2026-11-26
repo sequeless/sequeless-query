@@ -475,8 +475,10 @@ Every `FieldScope` carries a `stamp`. The field is always present; only its comp
 
 | Mode | Composition | Use |
 |---|---|---|
-| `VERSION_ONLY` (default) | ontology version numbers, sorted numerically and joined with `,` | simple; correct when nothing else varies |
-| `CONTENT_HASH` | hash over versions + traversal config + version policy + tenant + principal | correct when config or RBAC filtering varies per call |
+| `VERSION_ONLY` (default) | ontology version numbers, sorted numerically and joined with `,`; when `concreteTypes` is non-empty, followed by `\|concreteTypes:` and the concrete types' IRIs sorted and joined with `,` | simple; correct when nothing else varies |
+| `CONTENT_HASH` | hash over versions + concrete types + traversal config + version policy + tenant + root + principal | correct when config or RBAC filtering varies per call |
+
+`concreteTypes` (the root and its concrete subtypes, Navigator decision Q15) is part of every stamp, so a subtype change invalidates a cached scope.
 
 A saved search records the stamp it was built against. Comparing stamps answers "was this search
 written against a different schema?" *before* running it, rather than discovering breakage at
