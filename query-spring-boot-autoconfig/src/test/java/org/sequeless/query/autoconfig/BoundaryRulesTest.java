@@ -10,6 +10,8 @@ import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import org.sequeless.ontology.schema.spi.SchemaSource;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * Mechanically enforced boundaries for the Spring Boot autoconfiguration (spec 14, section 5). Spring is allowed
@@ -38,6 +40,22 @@ class BoundaryRulesTest {
                     .and(DescribedPredicate.not(equivalentTo(SchemaSource.class))))
             .as("the Query side sees the schema only through the Field contract (query ADR 0001); "
                     + "the host's SchemaSource bean type is the single exception");
+
+    /**
+     * Only the wiring and condition classes, the {@code @AutoConfiguration} and {@code @Configuration} types, may name
+     * the schema contract. The module has no api package, so no public type exposes it through a signature.
+     */
+    @ArchTest
+    static final ArchRule schema_contract_is_named_only_by_wiring_and_condition_classes = noClasses()
+            .that()
+            .areNotAnnotatedWith(AutoConfiguration.class)
+            .and()
+            .areNotAnnotatedWith(Configuration.class)
+            .should()
+            .dependOnClassesThat()
+            .resideInAPackage("org.sequeless.ontology..")
+            .as("the schema contract is named only by the composition root: the @AutoConfiguration and @Configuration "
+                    + "classes (spec 14, section 5)");
 
     @ArchTest
     static final ArchRule depends_only_on_java_and_its_declared_dependencies = noClasses()
