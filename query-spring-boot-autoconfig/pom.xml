@@ -12,7 +12,7 @@
 
   <groupId>org.sequeless</groupId>
   <artifactId>query-spring-boot-autoconfig</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <name>query-spring-boot-autoconfig</name>
   <description>Spring Boot autoconfiguration of the Query side: the Field source, the Postgres ports and the query service (spec 14, section 6.6 and Q25 to Q31 decisions; section 5 table)</description>
 
@@ -66,22 +66,22 @@
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>query-core</artifactId>
-      <version>0.1.0</version>
+      <version>0.1.1</version>
     </dependency>
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>query-field</artifactId>
-      <version>0.1.0</version>
+      <version>0.1.1</version>
     </dependency>
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>query-schema-adapter</artifactId>
-      <version>0.1.0</version>
+      <version>0.1.1</version>
     </dependency>
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>query-postgres-jsonb-adapter</artifactId>
-      <version>0.1.0</version>
+      <version>0.1.1</version>
     </dependency>
     <!-- The host's SchemaSource bean type: the autoconfiguration conditions on it and passes it to SchemaFieldSource.
          This is the one place outside query-schema-adapter that names schema-contract (see the module README). -->

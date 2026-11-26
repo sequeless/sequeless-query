@@ -1,5 +1,10 @@
 # Changelog
 
+* The following workspace dependencies were updated
+    * org.sequeless:query-field bumped to 0.1.1,
+    * org.sequeless:query-core bumped to 0.1.1,
+    * org.sequeless:query-field-testfixtures bumped to 0.1.1
+
 ## 0.1.0 (2026-11-26)
 
 

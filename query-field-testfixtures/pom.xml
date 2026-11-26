@@ -11,7 +11,7 @@
 
   <groupId>org.sequeless</groupId>
   <artifactId>query-field-testfixtures</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <packaging>jar</packaging>
 
   <name>query-field-testfixtures</name>
@@ -33,7 +33,7 @@
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>query-field</artifactId>
-      <version>0.1.0</version>
+      <version>0.1.1</version>
     </dependency>
     <dependency>
       <groupId>org.sequeless</groupId>

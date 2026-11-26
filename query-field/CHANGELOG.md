@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/sequeless/sequeless-query/compare/query-field-v0.1.0...query-field-v0.1.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* **query:** javadoc passes the release build (spec 14 item 5) ([#15](https://github.com/sequeless/sequeless-query/issues/15)) ([305db2e](https://github.com/sequeless/sequeless-query/commit/305db2e0a1d04125358c94a5b45858a6ab89a961))
+
 ## 0.1.0 (2026-11-26)
 
 
