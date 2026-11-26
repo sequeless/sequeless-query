@@ -16,6 +16,7 @@ import org.sequeless.kernel.identity.Scope;
 import org.sequeless.kernel.identity.TenantId;
 import org.sequeless.query.api.BrowseQuery;
 import org.sequeless.query.api.BrowseResult;
+import org.sequeless.query.api.FieldRegistries;
 import org.sequeless.query.api.IndexPreparationResult;
 import org.sequeless.query.api.InvalidQueryException;
 import org.sequeless.query.api.ObjectView;
@@ -131,7 +132,7 @@ public final class DefaultQueryService implements QueryService {
     private static List<String> problemsOf(FieldScope scope, BrowseQuery query) {
         List<String> problems = new ArrayList<>();
         if (query.filter().isPresent()) {
-            FilterValidator.validate(query.filter().get(), OperatorRegistry.defaults(), FieldRegistryBridge.of(scope))
+            FilterValidator.validate(query.filter().get(), OperatorRegistry.defaults(), FieldRegistries.of(scope))
                     .forEach(violation -> problems.add(violation.message()));
         }
         for (Sort sort : query.sorts()) {

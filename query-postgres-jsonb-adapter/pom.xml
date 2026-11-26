@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Pinned to a released sequeless-build-parent (spec 1). Renovate bumps it. -->
+  <parent>
+    <groupId>org.sequeless</groupId>
+    <artifactId>sequeless-build-parent</artifactId>
+    <version>0.1.3</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>org.sequeless</groupId>
+  <artifactId>query-postgres-jsonb-adapter</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>query-postgres-jsonb-adapter</name>
+  <description>PostgreSQL JSONB adapter for the Query side: the Field-to-SQL expressions, the filter FieldResolver, the browse port, index preparation and the Query migrations (spec 14, section 6.4)</description>
+
+  <properties>
+    <!-- Matches query-core: this module reads query-core and query-field classes compiled for 25. -->
+    <maven.compiler.release>25</maven.compiler.release>
+    <!-- Not a core module: Spring JDBC and Flyway are its job, so the parent's enforcer ban stays off. -->
+    <!-- Published: the BOM resolves it (spec 14, sections 7.1 and 7.2). Released by release-please, first at 0.1.0. -->
+    <maven.deploy.skip>false</maven.deploy.skip>
+    <!-- The version the org's Spring modules pin (automation-temporal-adapter, expression-spring-boot-autoconfig). -->
+    <spring-boot.version>4.1.1</spring-boot.version>
+    <filter-core.version>0.1.5</filter-core.version>
+    <filter-sql-adapter.version>0.1.5</filter-sql-adapter.version>
+    <filter-sql-postgres-adapter.version>0.1.1</filter-sql-postgres-adapter.version>
+    <kernel-identity.version>0.1.1</kernel-identity.version>
+    <kernel-values.version>0.1.1</kernel-values.version>
+    <testcontainers.version>2.0.5</testcontainers.version>
+    <postgresql.version>42.7.14</postgresql.version>
+    <assertj.version>3.27.7</assertj.version>
+    <junit.version>6.1.3</junit.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Spec 1: library repos import junit-bom in their own POM. The parent does not manage JUnit. -->
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Imported after junit-bom, so junit-bom wins for JUnit. Manages Spring JDBC, Spring Tx and Flyway. -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- filter-sql-adapter 0.1.5 and filter-sql-postgres-adapter 0.1.1 bring filter-core 0.1.4 transitively. Managing it
+           here makes them resolve the release this module declares, so the enforcer's convergence rule holds. -->
+      <dependency>
+        <groupId>org.sequeless</groupId>
+        <artifactId>filter-core</artifactId>
+        <version>${filter-core.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- Compile dependencies, spec 14 section 5. Each is declared only when the main code imports it, because
+         dependency:analyze fails on an unused compile-scope declaration. -->
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-field</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>filter-core</artifactId>
+      <version>${filter-core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>filter-sql-adapter</artifactId>
+      <version>${filter-sql-adapter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>filter-sql-postgres-adapter</artifactId>
+      <version>${filter-sql-postgres-adapter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>kernel-identity</artifactId>
+      <version>${kernel-identity.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>kernel-values</artifactId>
+      <version>${kernel-values.version}</version>
+    </dependency>
+    <!-- Jackson 3 (tools.jackson), as the prototype's ValueJsonCodec: sq_object.props is decoded into kernel Values,
+         and a list-tagged value needs a real JSON parser. The version comes from the Spring Boot BOM. -->
+    <dependency>
+      <groupId>tools.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <!-- test scope: main code does not use Jackson 2 directly; consumers get it through filter-core. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Test scope. The ITs use the published query-testkit contracts, Testcontainers PostgreSQL 18, Spring's
+         DriverManagerDataSource, and Flyway for the test-only Command DDL. -->
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-testkit</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- The boundary test imports these directly, so they stay declared, or dependency:analyze reports them as used undeclared. -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-postgresql</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgresql.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>github</id>
+      <url>https://maven.pkg.github.com/sequeless/*</url>
+    </repository>
+  </repositories>
+</project>

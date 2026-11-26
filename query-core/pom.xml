@@ -23,7 +23,8 @@
     <sequeless.enforcer.core.skip>false</sequeless.enforcer.core.skip>
     <!-- Published: the BOM resolves it (spec 14, sections 7.1 and 7.2). Released by release-please, first at 0.1.0. -->
     <maven.deploy.skip>false</maven.deploy.skip>
-    <filter-core.version>0.1.4</filter-core.version>
+    <filter-core.version>0.1.5</filter-core.version>
+    <jackson.version>2.23.0</jackson.version>
     <kernel-identity.version>0.1.1</kernel-identity.version>
     <kernel-values.version>0.1.1</kernel-values.version>
     <assertj.version>3.27.7</assertj.version>
@@ -101,6 +102,14 @@
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- The tests build filter operands as Jackson JsonNode values, so they stay declared, or dependency:analyze reports
+         them as used undeclared. The version is filter-core's own, the same release it resolves transitively. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

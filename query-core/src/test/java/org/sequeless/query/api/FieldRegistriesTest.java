@@ -1,4 +1,4 @@
-package org.sequeless.query.internal;
+package org.sequeless.query.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.sequeless.query.testsupport.QueryFixtures.FILTER_ONLY;
@@ -20,7 +20,7 @@ import org.sequeless.query.field.api.ClassRef;
 import org.sequeless.query.field.api.Field;
 import org.sequeless.query.field.api.FieldType;
 
-class FieldRegistryBridgeTest {
+class FieldRegistriesTest {
 
     private static final ClassRef INVOICE = classRef("Invoice");
 
@@ -28,7 +28,7 @@ class FieldRegistryBridgeTest {
     void aFilterableFieldIsRegisteredUnderItsEncodedKey() {
         Field status = field(path("urn:ont:status"), FieldType.STRING, FILTER_ONLY);
 
-        FieldRegistry registry = FieldRegistryBridge.of(scope(INVOICE, List.of(status)));
+        FieldRegistry registry = FieldRegistries.of(scope(INVOICE, List.of(status)));
 
         assertThat(registry.find("urn:ont:status")).isPresent();
     }
@@ -37,7 +37,7 @@ class FieldRegistryBridgeTest {
     void aFilterableObjectRefFieldIsRegisteredWithTheUuidFormat() {
         Field author = field(path("urn:ont:author"), FieldType.OBJECT_REF, FILTER_ONLY);
 
-        FieldRegistry registry = FieldRegistryBridge.of(scope(INVOICE, List.of(author)));
+        FieldRegistry registry = FieldRegistries.of(scope(INVOICE, List.of(author)));
 
         assertThat(registry.find("urn:ont:author").orElseThrow().getJsonSchemaFormat())
                 .isEqualTo("uuid");
@@ -47,7 +47,7 @@ class FieldRegistryBridgeTest {
     void aTraversalFieldIsRegisteredUnderItsPipeJoinedKey() {
         Field city = field(path("urn:ont:customer", "urn:ont:city"), FieldType.STRING, FILTER_ONLY);
 
-        FieldRegistry registry = FieldRegistryBridge.of(scope(INVOICE, List.of(city)));
+        FieldRegistry registry = FieldRegistries.of(scope(INVOICE, List.of(city)));
 
         assertThat(registry.find("urn:ont:customer|urn:ont:city")).isPresent();
         assertThat(registry.find("urn:ont:customer")).isEmpty();
@@ -57,7 +57,7 @@ class FieldRegistryBridgeTest {
     void aNonFilterableFieldIsAbsent() {
         Field internal = field(path("urn:ont:notes"), FieldType.STRING, new Capabilities(false, false, false, true));
 
-        FieldRegistry registry = FieldRegistryBridge.of(scope(INVOICE, List.of(internal)));
+        FieldRegistry registry = FieldRegistries.of(scope(INVOICE, List.of(internal)));
 
         assertThat(registry.find("urn:ont:notes")).isEmpty();
         assertThat(registry.all()).isEmpty();
@@ -70,7 +70,7 @@ class FieldRegistryBridgeTest {
             fields.add(field(path("urn:ont:" + type.name()), type, FILTER_SORT));
         }
 
-        FieldRegistry registry = FieldRegistryBridge.of(scope(INVOICE, fields));
+        FieldRegistry registry = FieldRegistries.of(scope(INVOICE, fields));
 
         assertThat(registry.all()).hasSize(FieldType.values().length);
         for (FieldType type : FieldType.values()) {
@@ -102,7 +102,7 @@ class FieldRegistryBridgeTest {
     void aFieldTypeMapsToItsJsonSchemaTypeAndFormat(FieldType type, String jsonSchemaType, String jsonSchemaFormat) {
         Field field = field(path("urn:ont:value"), type, FILTER_ONLY);
 
-        FieldDefinition definition = FieldRegistryBridge.of(scope(INVOICE, List.of(field)))
+        FieldDefinition definition = FieldRegistries.of(scope(INVOICE, List.of(field)))
                 .find("urn:ont:value")
                 .orElseThrow();
 
@@ -114,11 +114,23 @@ class FieldRegistryBridgeTest {
     void permittedOperatorsFollowTheJsonSchemaType() {
         Field status = field(path("urn:ont:status"), FieldType.STRING, FILTER_ONLY);
 
-        FieldDefinition definition = FieldRegistryBridge.of(scope(INVOICE, List.of(status)))
+        FieldDefinition definition = FieldRegistries.of(scope(INVOICE, List.of(status)))
                 .find("urn:ont:status")
                 .orElseThrow();
 
         assertThat(definition.getPermittedOperators()).contains("is", "exists", "contains");
         assertThat(definition.getPermittedOperators()).doesNotContain("is greater than");
+    }
+
+    @Test
+    void permittedOperatorsListTheAliasesOfEachApplicableOperatorBesideItsCanonicalName() {
+        Field dueDate = field(path("urn:ont:dueDate"), FieldType.DATE, FILTER_ONLY);
+
+        FieldDefinition definition = FieldRegistries.of(scope(INVOICE, List.of(dueDate)))
+                .find("urn:ont:dueDate")
+                .orElseThrow();
+
+        assertThat(definition.getPermittedOperators())
+                .contains("is greater than or equal to", "gte", "is less than", "lt");
     }
 }

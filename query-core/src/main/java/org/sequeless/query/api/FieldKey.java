@@ -1,4 +1,4 @@
-package org.sequeless.query.internal;
+package org.sequeless.query.api;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,15 +13,16 @@ import org.sequeless.query.field.api.PathSegment;
  *
  * <p>A Field's key is the IRIs of its segments joined by {@code |} (U+007C), with no spaces, in path
  * order. A single-segment key is the bare property IRI, so a direct Field keeps the key it always
- * had (spec 11, decision 5). The postgres adapter reads keys through {@link #decode(String)} and
- * escapes each IRI as a literal.
+ * had (spec 11, decision 5). The postgres adapter tests a key with {@link #isTraversal(String)} and
+ * builds each direct Field's expression from its path, so it does not call {@link #decode(String)};
+ * {@code decode} is the inverse for callers that need the segment IRIs of a key.
  */
-public final class FieldKeys {
+public final class FieldKey {
 
     private static final String SEPARATOR = "|";
     private static final String SEPARATOR_REGEX = "\\|";
 
-    private FieldKeys() {}
+    private FieldKey() {}
 
     /**
      * Builds the registry key of {@code path}: the segment IRIs joined by {@code |}.
@@ -33,6 +34,19 @@ public final class FieldKeys {
     public static String encode(FieldPath path) {
         Objects.requireNonNull(path, "path must not be null");
         return path.segments().stream().map(PathSegment::iri).collect(Collectors.joining(SEPARATOR));
+    }
+
+    /**
+     * Whether a registry key names a traversal path: it has a {@code |} separator. A direct Field's
+     * key, a bare IRI, is not a traversal.
+     *
+     * @param key the key to test; must not be {@code null}
+     * @return {@code true} when {@code key} contains {@code |}, {@code false} otherwise
+     * @throws NullPointerException if {@code key} is {@code null}
+     */
+    public static boolean isTraversal(String key) {
+        Objects.requireNonNull(key, "key must not be null");
+        return key.contains(SEPARATOR);
     }
 
     /**

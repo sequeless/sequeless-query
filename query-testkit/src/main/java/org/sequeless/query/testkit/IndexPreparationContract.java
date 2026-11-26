@@ -17,6 +17,7 @@ import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.sequeless.kernel.identity.TenantId;
 import org.sequeless.query.api.IndexPreparationResult;
+import org.sequeless.query.field.api.Capabilities;
 import org.sequeless.query.field.api.ClassRef;
 import org.sequeless.query.field.api.Field;
 import org.sequeless.query.field.api.FieldPath;
@@ -25,11 +26,11 @@ import org.sequeless.query.spi.IndexPreparationPort;
 
 /**
  * The mechanical form of the clauses of {@link IndexPreparationPort}'s interface-level javadoc that
- * the port exposes: null handling, the result (one entry per distinct registration key, sorted by
- * that key), idempotence, immutability, the version not being checked against the Fields, and
- * per-tenant registration. Every {@link IndexPreparationPort} implementation, adapter or test double,
- * is expected to satisfy them, and this class exercises each one against whatever {@link Environment}
- * {@link #freshEnvironment()} supplies.
+ * the port exposes: null handling, the result (the newly registered searchable Fields, one per
+ * distinct search key, sorted by that key), idempotence, immutability, the version not being checked
+ * against the Fields, and per-tenant registration. Every {@link IndexPreparationPort} implementation,
+ * adapter or test double, is expected to satisfy them, and this class exercises each one against
+ * whatever {@link Environment} {@link #freshEnvironment()} supplies.
  *
  * <p>This contract does not assert index structures or derived state, such as expression indexes, DDL
  * or a search backfill. Each adapter's own tests assert those (spec 14, section 6.2, Q24).
@@ -129,6 +130,36 @@ public abstract class IndexPreparationContract {
         IndexPreparationResult result = prepare(env, TENANT, V1, Map.of(personRoot(), List.of(email)));
 
         assertThat(result.newlyRegistered()).isEmpty();
+    }
+
+    @Test
+    void indexOnlyFieldsRegisterNothing() {
+        Environment env = freshEnvironment();
+        List<Field> indexOnly = taskFields().stream()
+                .filter(field -> !field.capabilities().searchable())
+                .filter(field ->
+                        field.capabilities().facetable() || field.capabilities().sortable())
+                .toList();
+        assertThat(indexOnly).isNotEmpty();
+
+        IndexPreparationResult result = prepare(env, TENANT, V1, Map.of(taskRoot(), indexOnly));
+
+        assertThat(result.newlyRegistered()).isEmpty();
+    }
+
+    @Test
+    void searchableDateFieldIsListedExactlyOnce() {
+        Environment env = freshEnvironment();
+        Field dueDate = searchableDueDate();
+        Map<ClassRef, List<Field>> roots = new LinkedHashMap<>();
+        roots.put(taskRoot(), List.of(dueDate));
+        roots.put(personRoot(), List.of(dueDate));
+
+        IndexPreparationResult result = prepare(env, TENANT, V1, roots);
+
+        assertThat(result.newlyRegistered()).containsExactly(dueDate.path());
+        // The same roots again register nothing new: the one registration of the Field is still the only one.
+        assertThat(prepare(env, TENANT, V1, roots).newlyRegistered()).isEmpty();
     }
 
     @Test
@@ -247,6 +278,27 @@ public abstract class IndexPreparationContract {
 
     private static List<Field> personFields() {
         return QueryFixtures.resolve(TENANT, QueryFixtures.PERSON).facets();
+    }
+
+    /** The Task's dueDate Field, a DATE, made searchable: search registration is by capability, not type. */
+    private static Field searchableDueDate() {
+        Field dueDate = taskFields().stream()
+                .filter(field -> field.path().asSlugPath().equals("dueDate"))
+                .findFirst()
+                .orElseThrow();
+        return new Field(
+                dueDate.path(),
+                dueDate.type(),
+                dueDate.nativeDatatypeIri(),
+                dueDate.cardinality(),
+                new Capabilities(true, false, true, false),
+                dueDate.label(),
+                dueDate.description(),
+                dueDate.conceptScheme(),
+                dueDate.restriction(),
+                dueDate.inference(),
+                dueDate.definedInVersions(),
+                dueDate.conflict());
     }
 
     /** The Person Fields plus the Task's title Field, which carries the same property IRI as Task's own. */

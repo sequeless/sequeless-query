@@ -4,12 +4,15 @@ import java.util.List;
 import org.sequeless.query.field.api.FieldPath;
 
 /**
- * What one index preparation registered: the searchable Fields that were newly registered for
- * the tenant (ADR 0002). The host runs the {@code search_vector} backfill when the list is not
- * empty.
+ * What one index preparation registered: the search registrations newly added for the tenant by
+ * that call (ADR 0002). Only searchable Fields are listed, one per distinct search key (the
+ * FieldRegistry key of spec 14, section 6.5), sorted by that key in {@link String#compareTo} order.
+ * Expression-index registrations are not listed. A searchable Field is listed whatever its type,
+ * DATE and DATETIME included, because search registration is by capability. The host runs the
+ * {@code search_vector} backfill when the list is not empty.
  *
- * @param newlyRegistered the Fields newly registered by this call, in deterministic order; never
- *     {@code null}, copied, empty when nothing new was registered
+ * @param newlyRegistered the searchable Fields whose search registration this call added, one per
+ *     search key, in key order; never {@code null}, copied, empty when nothing new was registered
  */
 public record IndexPreparationResult(List<FieldPath> newlyRegistered) {
 
