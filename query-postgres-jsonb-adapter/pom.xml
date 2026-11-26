@@ -12,7 +12,7 @@
 
   <groupId>org.sequeless</groupId>
   <artifactId>query-postgres-jsonb-adapter</artifactId>
-  <version>0.2.0</version>
+  <version>0.2.1</version>
   <name>query-postgres-jsonb-adapter</name>
   <description>PostgreSQL JSONB adapter for the Query side: the Field-to-SQL expressions, the filter FieldResolver, the browse port, index preparation and the Query migrations (spec 14, section 6.4)</description>
 
@@ -71,7 +71,7 @@
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>query-core</artifactId>
-      <version>0.2.0</version>
+      <version>0.2.1</version>
     </dependency>
     <dependency>
       <groupId>org.sequeless</groupId>
@@ -138,7 +138,7 @@
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>query-testkit</artifactId>
-      <version>0.2.0</version>
+      <version>0.2.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
