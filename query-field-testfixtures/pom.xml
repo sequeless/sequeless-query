@@ -15,7 +15,7 @@
   <packaging>jar</packaging>
 
   <name>query-field-testfixtures</name>
-  <description>Implementation-neutral fixtures, an in-memory reference FieldSource/ConceptSource, and the reusable contract test kit any query-field implementation validates itself against. See docs/specs/field-contract.md.</description>
+  <description>Implementation-neutral fixtures, an in-memory reference FieldSource/ConceptSource, and the reusable contract test kit any query-field implementation validates itself against.</description>
 
   <properties>
     <maven.compiler.release>25</maven.compiler.release>

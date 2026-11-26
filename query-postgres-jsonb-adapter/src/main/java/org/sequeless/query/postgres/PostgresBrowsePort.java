@@ -21,7 +21,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * The PostgreSQL {@link BrowsePort} over {@code sq_object} (spec 14, sections 6.1 and 6.4).
+ * The PostgreSQL {@link BrowsePort} over {@code sq_object}.
  *
  * <p>A browse runs three kinds of statement: a count of the matching objects, the page of items in result order, and one
  * bucket query per facet. Each takes the same candidates and the same translated filter, built by {@link BrowseSql}.
@@ -32,7 +32,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * <p>Result order is the one {@code BrowsePort} states. Ids compare as {@code uuid}, which Postgres orders by unsigned
  * bytes, so a sort on an id matches the contract. Soft-deleted objects are never read, and the tenant is the scope's.
  * Text search matches {@code search_vector}, which the trigger fills from every property the tenant registers as searchable,
- * whatever class it belongs to (spec 14, Q22 and Q29). That is a known difference from the in-memory reference, which reads
+ * whatever class it belongs to. That is a known difference from the in-memory reference, which reads
  * only the root's own searchable Fields. {@code PostgresTextSearchKnownLimitIT} pins it.
  *
  * <p>The count, the page and the facet buckets run in one read-only transaction at REPEATABLE READ, so they read one

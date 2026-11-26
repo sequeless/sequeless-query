@@ -10,7 +10,7 @@ import com.tngtech.archunit.lang.ArchRule;
 
 /**
  * Mechanically enforced hexagonal boundaries, and the dependency rule for {@code query-field}: it
- * depends on the JDK, itself and {@code org.sequeless.kernel.identity} only (query ADR 0003).
+ * depends on the JDK, itself and {@code org.sequeless.kernel.identity} only.
  */
 @AnalyzeClasses(
         packages = "org.sequeless.query.field",

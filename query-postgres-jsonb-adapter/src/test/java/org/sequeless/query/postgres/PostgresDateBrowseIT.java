@@ -42,7 +42,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 /**
- * The DATE and DATETIME facets and sorts of the browse adapter, over unindexed Fields (spec 14, Q25 and Q26). Neither
+ * The DATE and DATETIME facets and sorts of the browse adapter, over unindexed Fields. Neither
  * has an expression index until cutover, so these run the same casts as WHERE and ORDER BY without one. The facet buckets
  * are the value's text as the in-memory reference writes it: a DATE is its ISO day, and a DATETIME is
  * {@code Instant.toString()}.

@@ -10,7 +10,7 @@ import java.util.List;
  * <p>{@link org.sequeless.query.spi.BrowsePort} implementations throw it too, for a filter, sort or facet
  * shape they do not evaluate: a filter node other than {@code AndFilter}, {@code OrFilter} or {@code
  * FieldFilter}, a traversal path used as a filter, sort or facet path, or the {@code like} and {@code not
- * like} operators (spec 14, Q23).
+ * like} operators.
  *
  * <p>The message is {@code "invalid query: "} followed by the problems joined by {@code "; "}.
  */

@@ -9,7 +9,7 @@ import org.sequeless.query.field.api.Field;
 import org.sequeless.query.field.api.FieldType;
 
 /**
- * The one place a Field becomes SQL over {@code sq_object.props} (spec 14, section 6.4). The filter's WHERE
+ * The one place a Field becomes SQL over {@code sq_object.props}. The filter's WHERE
  * clause, the sort and the index DDL all use {@link #sqlOf}, so an expression index always matches the
  * expression a query compares against.
  *
@@ -25,7 +25,7 @@ import org.sequeless.query.field.api.FieldType;
  * <p>The JSON key per type is the tag the prototype's writer stores for the value's kind (its {@code
  * ValueJsonCodec}): {@code text}, {@code integer}, {@code decimal}, {@code bool}, {@code date}, {@code dateTime}
  * and {@code ref}. Language-tagged strings, IRI references, concept references, times and durations are stored as
- * text values and read with the JSON key {@code text} and no cast (spec 14, Q25).
+ * text values and read with the JSON key {@code text} and no cast.
  */
 final class FieldExpressions {
 
@@ -114,7 +114,7 @@ final class FieldExpressions {
 
     /**
      * The SQL text of a facet bucket's value for {@code field}, as a parenthesised expression over {@code sq_object}. It
-     * writes the value as the in-memory reference does (spec 14, Q21 and Q25), so the bucket text is the same whichever
+     * writes the value as the in-memory reference does, so the bucket text is the same whichever
      * adapter answers:
      *
      * <ul>

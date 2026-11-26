@@ -22,7 +22,7 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * Field source and Postgres ports for the Query side, in a Spring Boot host (spec 14, section 5). The query service
+ * Field source and Postgres ports for the Query side, in a Spring Boot host. The query service
  * is {@link QueryServiceAutoConfiguration}, which runs after this class.
  *
  * <p>Nothing is registered unless the host defines both a {@link SchemaSource} bean and a {@link DataSource} bean. The

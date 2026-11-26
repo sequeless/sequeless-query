@@ -23,7 +23,7 @@
     <maven.compiler.release>25</maven.compiler.release>
     <!-- Opts in to the parent's enforcer ban on Spring, Jena and Lombok (spec 1, §5). -->
     <sequeless.enforcer.core.skip>false</sequeless.enforcer.core.skip>
-    <!-- Published: the BOM resolves it (spec 14, sections 7.1 and 7.2). Released by release-please, first at 0.1.0. -->
+    <!-- Published: the BOM resolves it. Released by release-please, first at 0.1.0. -->
     <maven.deploy.skip>false</maven.deploy.skip>
     <filter-core.version>0.1.5</filter-core.version>
     <jackson.version>2.23.0</jackson.version>
@@ -47,7 +47,7 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- Compile dependencies, spec 14 section 5: the Field contract, the filter grammar and validator, and the kernel value types. -->
+    <!-- Compile dependencies: the Field contract, the filter grammar and validator, and the kernel value types. -->
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>query-field</artifactId>

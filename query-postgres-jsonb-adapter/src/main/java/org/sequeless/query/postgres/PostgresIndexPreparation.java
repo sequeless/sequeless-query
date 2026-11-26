@@ -26,7 +26,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * The PostgreSQL {@link IndexPreparationPort} (spec 14, sections 6.2 and 6.4; query ADR 0002).
+ * The PostgreSQL {@link IndexPreparationPort}.
  *
  * <p>Only root Fields are prepared: a Field whose path has one segment. A traversal Field is never indexed or
  * registered (Q7). Of each root Field:
@@ -166,12 +166,12 @@ public final class PostgresIndexPreparation implements IndexPreparationPort {
      * of {@code tenantId|propertyIri}. Package-private, so the tests pin the scheme.
      *
      * <p>The MD5 is a derived identifier, not a security control. The names must match the prototype's existing indexes
-     * until the spec 17 cutover, so the scheme stays as it is (spec 14 section 6.2, decision Q31). The input is not
+     * until the spec 17 cutover, so the scheme stays as it is. The input is not
      * secret, and the digest is not used for a password, a credential or an integrity check.
      */
     static String indexNameFor(String tenantId, String propertyIri) {
         try {
-            // Deterministic index identifier, not a secret (spec 14 Q31): the name must match the prototype's indexes
+            // Deterministic index identifier, not a secret: the name must match the prototype's indexes
             // until the spec 17 cutover.
             MessageDigest md5 = MessageDigest.getInstance("MD5"); // NOSONAR java:S4790
             byte[] digest = md5.digest((tenantId + "|" + propertyIri).getBytes(StandardCharsets.UTF_8));

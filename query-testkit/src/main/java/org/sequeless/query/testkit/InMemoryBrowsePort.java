@@ -66,10 +66,10 @@ import org.sequeless.query.spi.BrowsePort;
  * by the number of occurrences, best first. The searchable text is read from the root's own
  * searchable Fields: the single-segment Fields of the scope that are {@code searchable}. A traversal
  * Field that an expansion added to the scope is not searched. A property that is searchable only on
- * a concrete subtype is not searched either (spec 14, Q22).
+ * a concrete subtype is not searched either.
  *
  * <p>Before any object is read, the query is checked, and every problem is reported together in one
- * {@link InvalidQueryException} (spec 14, Q23). The query is rejected when it names:
+ * {@link InvalidQueryException}. The query is rejected when it names:
  *
  * <ul>
  *   <li>a filter node other than {@code AndFilter}, {@code OrFilter} or {@code FieldFilter}, such as
@@ -88,7 +88,7 @@ import org.sequeless.query.spi.BrowsePort;
  *
  * <p>Reference values bucket by their target's id text, and a bucket counts only a target that is
  * visible in the tenant: stored and not soft-deleted. A missing or soft-deleted target contributes
- * to no bucket (spec 14, Q21).
+ * to no bucket.
  *
  * <p>Ids, and reference values used as sort keys or facet keys, compare in {@link BrowsePort}'s
  * unsigned order (see {@code compareIds}), never by the signed {@link UUID#compareTo}.

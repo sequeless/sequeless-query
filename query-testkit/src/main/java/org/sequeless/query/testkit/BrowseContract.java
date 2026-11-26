@@ -74,7 +74,7 @@ import org.sequeless.query.spi.BrowsePort;
  * particular storage technology.
  *
  * <p>Three clauses of {@link BrowsePort} are pinned with fixtures here. A reference facet bucket
- * drops a missing or soft-deleted target (spec 14, Q21). Free text is matched against the root's own
+ * drops a missing or soft-deleted target. Free text is matched against the root's own
  * searchable Fields, and a traversal Field that an expansion adds is not searched (Q22). A filter,
  * sort or facet shape the port does not evaluate is rejected with {@link InvalidQueryException}: AnyFilter,
  * a traversal path used as a filter, sort or facet path, {@code like} and {@code not like} (Q23). Free text

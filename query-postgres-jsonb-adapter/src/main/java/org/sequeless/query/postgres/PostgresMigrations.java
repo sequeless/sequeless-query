@@ -12,7 +12,7 @@ import org.flywaydb.core.Flyway;
  * <p>The Command side (the {@code sq_object} table, its {@code search_vector} column and the trigger
  * that fills it) is not owned by this module. V2 indexes that column, so the Command migrations must
  * already be applied to the same database before {@link #migrate} runs. The ITs of this module apply a
- * test-only copy of those migrations, which is not shipped (spec 14, section 2.3, Q5).
+ * test-only copy of those migrations, which is not shipped.
  *
  * <p>Baselining at version {@code 0} lets this set apply to a database that already has the Command
  * schema but no Query history table, as the prototype's Query set did.

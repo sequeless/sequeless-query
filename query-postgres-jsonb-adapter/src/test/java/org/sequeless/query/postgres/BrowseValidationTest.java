@@ -19,7 +19,7 @@ import org.sequeless.query.api.Sort;
 import org.sequeless.query.field.api.FieldPath;
 
 /**
- * The shapes {@link BrowseValidation} rejects, checked without a database (spec 14, Q23). Each rejection names the key it
+ * The shapes {@link BrowseValidation} rejects, checked without a database. Each rejection names the key it
  * refuses, so an operator problem and a traversal problem both carry the key the contract asserts.
  */
 class BrowseValidationTest {

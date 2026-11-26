@@ -28,7 +28,7 @@ import org.sequeless.query.field.api.TraversalConfig;
 import org.sequeless.query.field.api.VersionPolicy;
 import org.sequeless.query.field.spi.FieldSource;
 
-/** Every FieldSource method translates a tenant with no consistent Ontology into UNKNOWN_TENANT (spec 14 Q19). */
+/** Every FieldSource method translates a tenant with no consistent Ontology into UNKNOWN_TENANT. */
 class SchemaFieldSourceNoConsistentOntologyTest {
 
     private static final Schema PEOPLE = schema(

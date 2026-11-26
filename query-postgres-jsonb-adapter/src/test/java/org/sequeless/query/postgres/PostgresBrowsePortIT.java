@@ -128,7 +128,7 @@ class PostgresBrowsePortIT extends BrowseContract {
     /**
      * A browse with one facet takes exactly one connection, and that connection is set read-only at REPEATABLE READ before
      * the statements run. The count, the page and the bucket query share the transaction's connection, so the total agrees
-     * with the items (spec 14, section 6.4).
+     * with the items.
      */
     @Test
     void browseRunsInOneReadOnlyRepeatableReadTransaction() {

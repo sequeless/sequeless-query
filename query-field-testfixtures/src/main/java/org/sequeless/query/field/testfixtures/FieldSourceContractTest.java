@@ -44,7 +44,7 @@ import org.sequeless.query.field.spi.FieldSource;
  * methods — {@code resolve}, {@code expand}, and {@code describe} — against the nine canned {@link
  * ContractFixtures} scenarios. A concrete subclass supplies only {@link #sourceFor(ContractFixture)}
  * — how to build its {@code FieldSource} implementation over a given scenario — and inherits every
- * test unchanged. See {@code docs/specs/field-contract.md} and {@code package-info}.
+ * test unchanged. See {@code package-info}.
  */
 public abstract class FieldSourceContractTest {
 

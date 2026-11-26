@@ -26,7 +26,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * What the adapter leaves in the database: the expression indexes, the registries and the index names. The
- * query-testkit contract checks the result of a call and does not look at these (spec 14, Q24).
+ * query-testkit contract checks the result of a call and does not look at these.
  */
 class PostgresIndexPreparationIT extends AbstractPostgresIT {
 

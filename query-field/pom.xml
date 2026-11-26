@@ -25,12 +25,12 @@
     <junit-jupiter.version>5.14.4</junit-jupiter.version>
     <assertj-core.version>3.27.7</assertj-core.version>
 
-    <!-- Published: the Field contract is a released artifact (spec 14, section 7.1). -->
+    <!-- Published: the Field contract is a released artifact. -->
     <maven.deploy.skip>false</maven.deploy.skip>
   </properties>
 
   <dependencies>
-    <!-- ADR 0003: kernel-identity is the only compile dependency this contract allows. -->
+    <!-- Kernel-identity is the only compile dependency this contract allows. -->
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>kernel-identity</artifactId>
@@ -102,12 +102,12 @@
                     <exclude>*:*:*:*:compile</exclude>
                     <exclude>*:*:*:*:runtime</exclude>
                   </excludes>
-                  <!-- ADR 0003: kernel-identity is the one permitted compile and runtime dependency. -->
+                  <!-- Kernel-identity is the one permitted compile and runtime dependency. -->
                   <includes>
                     <include>org.sequeless:kernel-identity:*:*:compile</include>
                     <include>org.sequeless:kernel-identity:*:*:runtime</include>
                   </includes>
-                  <message>query-field is the Field contract; every consumer inherits whatever it declares. Its only compile or runtime dependency may be org.sequeless:kernel-identity (query ADR 0003). See docs/specs/field-contract.md.</message>
+                  <message>query-field is the Field contract; every consumer inherits whatever it declares. Its only compile or runtime dependency may be org.sequeless:kernel-identity.</message>
                 </bannedDependencies>
               </rules>
             </configuration>

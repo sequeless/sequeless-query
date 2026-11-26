@@ -12,8 +12,8 @@ import org.sequeless.query.api.InvalidQueryException;
 import org.sequeless.query.field.api.Field;
 
 /**
- * Resolves a filter's field key to the SQL expression of its Field, for filter-sql-adapter's translator (spec 14,
- * section 6.4). The key is the Field's {@link FieldKey} (the bare IRI of a direct Field), which is the path the
+ * Resolves a filter's field key to the SQL expression of its Field, for filter-sql-adapter's translator.
+ * The key is the Field's {@link FieldKey} (the bare IRI of a direct Field), which is the path the
  * filter's FieldRegistry validated.
  *
  * <p>A key with a {@code |} names a traversal, and is rejected with {@link InvalidQueryException} that names the key

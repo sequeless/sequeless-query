@@ -25,7 +25,6 @@
  * scope, not {@code test} scope, precisely because its main sources are themselves test
  * infrastructure meant to be reused by other modules' test code. It is never meant to reach a
  * consumer's compile classpath the way {@code query-field} itself does; it is a test-support
- * artifact, published so downstream adapters can depend on it in their own {@code test} scope. See
- * {@code docs/specs/field-contract.md}.
+ * artifact, published so downstream adapters can depend on it in their own {@code test} scope.
  */
 package org.sequeless.query.field.testfixtures;

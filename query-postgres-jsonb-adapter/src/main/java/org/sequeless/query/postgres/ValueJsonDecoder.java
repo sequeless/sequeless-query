@@ -15,7 +15,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Decodes {@code sq_object.props} into kernel {@link Value}s (spec 14, sections 6.1 and 6.4). This is the read half of the
+ * Decodes {@code sq_object.props} into kernel {@link Value}s. This is the read half of the
  * prototype's {@code ValueJsonCodec}, at prototype commit 48a0cc6, and it reads the same tagged shape: a top-level
  * object keyed by property IRI, each value a single-entry object whose key names the {@link Value} variant
  * ({@code text}, {@code integer}, {@code decimal}, {@code bool}, {@code dateTime}, {@code date}, {@code ref} or

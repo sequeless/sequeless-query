@@ -22,7 +22,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 /**
- * Pins a documented difference from the in-memory reference, which is not a testkit contract case (spec 14, Q22 and Q29).
+ * Pins a documented difference from the in-memory reference, which is not a testkit contract case.
  *
  * <p>Postgres text search reads {@code sq_object.search_vector}. That column is filled, for each row, from every property
  * the tenant registers as searchable, whatever class the property belongs to. The in-memory reference reads only the

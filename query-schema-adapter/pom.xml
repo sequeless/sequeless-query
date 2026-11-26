@@ -23,7 +23,7 @@
     <maven.compiler.release>25</maven.compiler.release>
     <!-- Opts in to the parent's enforcer ban on Spring, Jena and Lombok (spec 1, §5). -->
     <sequeless.enforcer.core.skip>false</sequeless.enforcer.core.skip>
-    <!-- Published: the adapter is released with the query side (spec 14, section 7.1). -->
+    <!-- Published: the adapter is released with the query side. -->
     <maven.deploy.skip>false</maven.deploy.skip>
     <schema-contract.version>0.2.0</schema-contract.version>
     <kernel-identity.version>0.1.1</kernel-identity.version>
@@ -45,7 +45,7 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- Compile dependencies, spec 14 section 5: the Field contract this adapter implements, the Schema it reads, and the tenant identity. -->
+    <!-- Compile dependencies: the Field contract this adapter implements, the Schema it reads, and the tenant identity. -->
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>query-field</artifactId>

@@ -1,5 +1,5 @@
 /**
- * The PostgreSQL JSONB adapter of the Query side (spec 14, section 6.4). It implements the three driven
+ * The PostgreSQL JSONB adapter of the Query side. It implements the three driven
  * ports of {@code query-core}: {@code PostgresBrowsePort} (browse), {@code PostgresReadPort} (read) and
  * {@code PostgresIndexPreparation} (index preparation). Each Field maps to a SQL expression over
  * {@code sq_object.props}, filter paths resolve through that mapping, and the adapter prepares the

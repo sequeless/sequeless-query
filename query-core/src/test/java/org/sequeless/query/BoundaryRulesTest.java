@@ -9,7 +9,7 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
 /**
- * Mechanically enforced hexagonal boundaries for query-core, spec 14 section 5 and query ADR 0001.
+ * Mechanically enforced hexagonal boundaries for query-core.
  * The template's rules stay. The dependency rule is widened to query-core's declared compile
  * dependencies (query-field, filter-core, kernel-identity, kernel-values), and the schema contract
  * stays out: no class may depend on {@code org.sequeless.ontology..}.
@@ -31,7 +31,7 @@ class BoundaryRulesTest {
             .should()
             .dependOnClassesThat()
             .resideInAnyPackage("org.sequeless.ontology..")
-            .as("query-core must not depend on the ontology schema contract (query ADR 0001); "
+            .as("query-core must not depend on the ontology schema contract; "
                     + "the Field contract is the only view of the schema it may use");
 
     @ArchTest
@@ -48,7 +48,7 @@ class BoundaryRulesTest {
 
     /**
      * The one exception is {@code QueryServiceFactory}, the composition seam: it builds the internal service
-     * so that no other module reaches into {@code internal} (spec 14, section 5).
+     * so that no other module reaches into {@code internal}.
      */
     @ArchTest
     static final ArchRule api_and_spi_never_depend_on_internal = noClasses()

@@ -28,7 +28,7 @@ import org.sequeless.query.field.api.FieldScope;
 import org.sequeless.query.field.api.FieldType;
 
 /**
- * The SQL of one browse over {@code sq_object}, built from one scope and one query (spec 14, sections 6.1 and 6.4).
+ * The SQL of one browse over {@code sq_object}, built from one scope and one query.
  *
  * <p>The candidates are the fixed conditions (the tenant, the scope's concrete types, soft delete) and the free-text
  * match. The filter is translated by filter-sql's translator, against the scope's filterable Fields, and its values are
@@ -93,7 +93,7 @@ final class BrowseSql {
         if (!query.sorts().isEmpty()) {
             for (Sort sort : query.sorts()) {
                 Field field = fieldFor(sort.path());
-                // Text keys compare by code point, as the facet buckets do (spec 14, Q21).
+                // Text keys compare by code point, as the facet buckets do.
                 String expression = FieldExpressions.sqlOf(field) + (isText(field.type()) ? " COLLATE \"C\"" : "");
                 terms.add(expression + (sort.direction() == Direction.ASC ? " ASC NULLS LAST" : " DESC NULLS FIRST"));
             }
@@ -109,8 +109,8 @@ final class BrowseSql {
     }
 
     /**
-     * The bucket query of one facet, as {@code (bucket_value, bucket_count)} rows in bucket order (spec 14, Q21 and
-     * Q14). The counts use the candidates with the facet's own top-level conjuncts removed. A scalar bucket keeps only
+     * The bucket query of one facet, as {@code (bucket_value, bucket_count)} rows in bucket order.
+     * The counts use the candidates with the facet's own top-level conjuncts removed. A scalar bucket keeps only
      * present values. A reference bucket keeps only targets visible in the tenant, which is an inner join by
      * subquery, so the count of the objects still reaches the total. A DATE or DATETIME bucket is the value's text as the
      * in-memory reference writes it, from {@link FieldExpressions#bucketTextOf}.

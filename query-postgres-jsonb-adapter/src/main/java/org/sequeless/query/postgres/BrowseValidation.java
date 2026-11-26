@@ -18,7 +18,7 @@ import org.sequeless.query.api.Sort;
 import org.sequeless.query.field.api.FieldPath;
 
 /**
- * The shapes this adapter does not evaluate, rejected before any SQL is built (spec 14, Q23). The rule is the one
+ * The shapes this adapter does not evaluate, rejected before any SQL is built. The rule is the one
  * {@code BrowsePort} states and the in-memory reference enforces: an {@code AnyFilter}, a traversal path used as a
  * filter, sort or facet key, and an operator outside the evaluated set (the {@code like} and {@code not like} pair,
  * and any operator filter-core does not know). Every problem is collected and named in one

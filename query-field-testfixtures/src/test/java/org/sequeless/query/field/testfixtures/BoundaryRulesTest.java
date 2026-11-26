@@ -9,8 +9,8 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
 /**
- * Mechanically enforced boundaries for the query-field test kit: the template's four rules (spec 14,
- * section 5), scanning {@code org.sequeless.query.field.testfixtures}. The kit has no api or spi
+ * Mechanically enforced boundaries for the query-field test kit: the template's four rules,
+ * scanning {@code org.sequeless.query.field.testfixtures}. The kit has no api or spi
  * packages of its own, so the two rules that name them hold vacuously here (allowed to be empty).
  * The dependency rule is widened to query-field, kernel-identity, JUnit and AssertJ, which are the
  * declared dependencies of this module.

@@ -14,7 +14,7 @@
   <artifactId>query-spring-boot-autoconfig</artifactId>
   <version>0.4.0</version>
   <name>query-spring-boot-autoconfig</name>
-  <description>Spring Boot autoconfiguration of the Query side: the Field source, the Postgres ports and the query service (spec 14, section 6.6 and Q25 to Q31 decisions; section 5 table)</description>
+  <description>Spring Boot autoconfiguration of the Query side: the Field source, the Postgres ports and the query service</description>
 
   <properties>
     <!-- The deploy URL is built from this name; it must name this repository (the parent defaults to sequeless-build). -->
@@ -22,7 +22,7 @@
     <!-- Matches query-core: this module reads query-core classes compiled for 25. -->
     <maven.compiler.release>25</maven.compiler.release>
     <!-- Not a core module: the parent defaults sequeless.enforcer.core.skip to true, so its enforcer ban on Spring stays off here, as in query-postgres-jsonb-adapter. -->
-    <!-- Published: the BOM resolves it (spec 14, sections 7.1 and 7.2). Released by release-please, first at 0.1.0. -->
+    <!-- Published: the BOM resolves it. Released by release-please, first at 0.1.0. -->
     <maven.deploy.skip>false</maven.deploy.skip>
     <!-- The version the org's Spring modules pin (query-postgres-jsonb-adapter, automation-temporal-adapter). -->
     <spring-boot.version>4.1.1</spring-boot.version>
@@ -62,7 +62,7 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- Compile dependencies, spec 14 section 5, plus the Spring artifacts the autoconfiguration names directly.
+    <!-- Compile dependencies, plus the Spring artifacts the autoconfiguration names directly.
          Each is declared only when the main code imports it, because dependency:analyze fails on an unused
          compile-scope declaration and on a used undeclared one. -->
     <dependency>

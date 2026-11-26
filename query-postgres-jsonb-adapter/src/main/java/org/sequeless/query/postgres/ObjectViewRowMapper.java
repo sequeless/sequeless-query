@@ -12,7 +12,7 @@ import org.sequeless.query.api.ObjectView;
 import org.sequeless.query.api.TypeRef;
 
 /**
- * The row shape the Postgres read ports share (spec 14, section 6.4): the columns an {@code sq_object} row is selected by,
+ * The row shape the Postgres read ports share: the columns an {@code sq_object} row is selected by,
  * and the mapping of one such row to an {@link ObjectView}. {@link PostgresBrowsePort} and {@link PostgresReadPort} both
  * select {@link #COLUMNS} and map with {@link #toView}, so one stored object reads the same from either port.
  */

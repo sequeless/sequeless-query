@@ -9,7 +9,7 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
 /**
- * Mechanically enforced boundaries for query-testkit, spec 14 sections 5 and 7.3 and query ADR 0001.
+ * Mechanically enforced boundaries for query-testkit.
  * The template's rules stay: no Spring, and no ontology schema contract. The dependency rule is
  * widened to the testkit's declared dependencies. The testkit must not reach into query-core's
  * {@code internal} package, so the Q7 key is decoded only in query-core and is not copied here.
@@ -31,7 +31,7 @@ class BoundaryRulesTest {
             .should()
             .dependOnClassesThat()
             .resideInAnyPackage("org.sequeless.ontology..")
-            .as("the testkit must not depend on the ontology schema contract (query ADR 0001)");
+            .as("the testkit must not depend on the ontology schema contract");
 
     @ArchTest
     static final ArchRule module_does_not_reach_into_query_core_internal = noClasses()
@@ -53,7 +53,7 @@ class BoundaryRulesTest {
                     "com.fasterxml.jackson..",
                     "org.junit..",
                     "org.assertj..")
-            .as("the testkit depends on the JDK and its declared dependencies only (spec 14, section 5)");
+            .as("the testkit depends on the JDK and its declared dependencies only");
 
     @ArchTest
     static final ArchRule contracts_and_references_are_public = classes()

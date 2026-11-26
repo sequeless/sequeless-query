@@ -12,7 +12,7 @@ import org.sequeless.query.api.InvalidQueryException;
 import org.sequeless.query.field.api.FieldType;
 
 /**
- * Coerces a filter value to the Java type its Field's expression compares against (spec 14, section 6.4): a
+ * Coerces a filter value to the Java type its Field's expression compares against: a
  * {@code DATE} to {@link LocalDate}, a {@code DATETIME} to a {@link Timestamp} made from an {@link OffsetDateTime},
  * an {@code OBJECT_REF} to {@link UUID}, a {@code DECIMAL} to {@link BigDecimal}, an {@code INTEGER} to {@code
  * Long}, a {@code BOOLEAN} to {@code Boolean}, and every text type to {@code String}. A {@link List} is coerced

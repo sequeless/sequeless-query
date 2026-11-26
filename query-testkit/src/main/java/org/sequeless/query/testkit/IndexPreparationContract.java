@@ -33,12 +33,12 @@ import org.sequeless.query.spi.IndexPreparationPort;
  * whatever {@link Environment} {@link #freshEnvironment()} supplies.
  *
  * <p>This contract does not assert index structures or derived state, such as expression indexes, DDL
- * or a search backfill. Each adapter's own tests assert those (spec 14, section 6.2, Q24).
+ * or a search backfill. Each adapter's own tests assert those.
  *
  * <p>Every call this contract makes to {@link IndexPreparationPort#prepare} goes through one helper,
  * which then runs the environment's {@code awaitPrepared} hook. That hook is the seam an adapter
- * whose preparation is asynchronous uses to say that the preparation is done or durably accepted
- * (ADR 0002). An adapter that prepares synchronously passes a no-op.
+ * whose preparation is asynchronous uses to say that the preparation is done or durably accepted.
+ * An adapter that prepares synchronously passes a no-op.
  *
  * <p>To use this contract, extend it from a test class in your own module and implement {@link
  * #freshEnvironment()}:

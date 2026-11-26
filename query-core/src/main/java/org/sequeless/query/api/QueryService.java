@@ -43,7 +43,7 @@ public interface QueryService {
     /**
      * Prepares the index structures the tenant's root classes need for the given ontology version.
      *
-     * <p><b>Version guard (ADR 0002).</b> The use case resolves each root class of the tenant
+     * <p><b>Version guard.</b> The use case resolves each root class of the tenant
      * through {@code FieldSource}. If any resolved scope does not list {@code version} among its
      * ontology versions, a newer activation has superseded this call: the use case returns {@link
      * IndexPreparationResult#EMPTY} and does not call the port.
@@ -55,7 +55,7 @@ public interface QueryService {
      * <p><b>Roots.</b> An empty root list still calls the port, with an empty map of root fields. A
      * root class listed twice is rejected before any scope is resolved.
      *
-     * <p><b>Done or durably accepted (ADR 0002).</b> When the guard passes, the call returns once
+     * <p><b>Done or durably accepted.</b> When the guard passes, the call returns once
      * the preparation is done or durably accepted. A repeat call with the same version returns an
      * empty {@code newlyRegistered}.
      *

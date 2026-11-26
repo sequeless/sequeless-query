@@ -8,12 +8,12 @@ import java.util.UUID;
  *
  * <p>Like {@link ClassRef}, the property is identified durably by {@link #propertyId()} with
  * {@link #slug()} carried only for presentation. See field-contract.md section 2.1. {@link #iri()} is
- * the key component the Query side builds its FieldRegistry key from (spec 14 section 6.5), so it is
+ * the key component the Query side builds its FieldRegistry key from, so it is
  * not presentation-only.
  *
  * @param propertyId the durable identity of the property walked at this hop; never {@code null}
  * @param iri the property's IRI; the Query side's FieldRegistry key is built from these IRIs joined
- *     by '|' (spec 14 section 6.5); never {@code null}, blank, or containing '|'
+ *     by '|'; never {@code null}, blank, or containing '|'
  * @param slug the current short name of the property (for example {@code "city"} in
  *     {@code "customer.city"}); never {@code null} or blank
  * @param targetClass the class this hop lands on, or {@code null} when this segment ends in a

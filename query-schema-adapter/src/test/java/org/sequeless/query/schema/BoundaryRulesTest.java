@@ -9,7 +9,7 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
 /**
- * Mechanically enforced boundaries for query-schema-adapter, spec 14 section 5 and query ADR 0001.
+ * Mechanically enforced boundaries for query-schema-adapter.
  * The template's four rules hold over {@code org.sequeless.query.schema}. The module has no api or spi
  * package of its own, so the two rules that name them hold vacuously (allowed to be empty). The
  * dependency rule is widened to query-field, schema-contract and kernel-identity. No class may depend

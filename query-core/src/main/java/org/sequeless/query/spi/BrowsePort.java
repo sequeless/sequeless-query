@@ -48,7 +48,7 @@ import org.sequeless.query.field.api.FieldScope;
  *       BrowseResult#items()} and the correct {@link BrowseResult#total()}.
  *   <li><b>Facet counting is "conventional multi-select."</b> For a facet on path {@code P}, the
  *       counts are computed with the filter minus its top-level AND conjuncts that are a
- *       {@code FieldFilter} on {@code P}, compared by the Q7 key (spec 14 section 6.5). Every other
+ *       {@code FieldFilter} on {@code P}, compared by the Q7 key. Every other
  *       conjunct is kept whole, including any {@code OrFilter} or {@code AnyFilter} that mentions
  *       {@code P}. A filter that is not an {@code AndFilter} counts as one conjunct; a
  *       {@code FieldFilter} on {@code P} is removed, leaving match-all. The free-text condition

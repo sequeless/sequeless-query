@@ -14,16 +14,16 @@
   <artifactId>query-testkit</artifactId>
   <version>0.2.1</version>
   <name>query-testkit</name>
-  <description>Contract tests and in-memory references for the Query ports: BrowsePort, ReadPort and IndexPreparationPort (spec 14, section 7.3)</description>
+  <description>Contract tests and in-memory references for the Query ports: BrowsePort, ReadPort and IndexPreparationPort</description>
 
   <properties>
     <!-- The deploy URL is built from this name; it must name this repository (the parent defaults to sequeless-build). -->
     <sequeless.github.repository>sequeless-query</sequeless.github.repository>
     <!-- Matches query-core: this module reads query-core and query-field classes compiled for 25. -->
     <maven.compiler.release>25</maven.compiler.release>
-    <!-- Opts in to the parent's enforcer ban on Spring, Jena and Lombok: the testkit has no Spring (spec 14, section 5). -->
+    <!-- Opts in to the parent's enforcer ban on Spring, Jena and Lombok: the testkit has no Spring. -->
     <sequeless.enforcer.core.skip>false</sequeless.enforcer.core.skip>
-    <!-- Published: the BOM runs its contracts against the released artifact (spec 14, sections 7.1 and 7.3). -->
+    <!-- Published: the BOM runs its contracts against the released artifact. -->
     <maven.deploy.skip>false</maven.deploy.skip>
     <filter-core.version>0.1.5</filter-core.version>
     <kernel-identity.version>0.1.1</kernel-identity.version>
@@ -48,7 +48,7 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- Compile dependencies, spec 14 section 5: query-core and query-field-testfixtures. The rest are declared
+    <!-- Compile dependencies: query-core and query-field-testfixtures. The rest are declared
          directly because the testkit imports their types, and dependency:analyze fails on used-undeclared classes. -->
     <dependency>
       <groupId>org.sequeless</groupId>

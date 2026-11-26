@@ -2,7 +2,7 @@ package org.sequeless.query.api;
 
 /**
  * A page request for {@link org.sequeless.query.spi.BrowsePort#browse}: a 0-based page number and
- * a page size. Offset paging (spec 14, section 4.3).
+ * a page size. Offset paging.
  *
  * <p>A page whose number is past the last page is not an error: the browse returns no items and
  * the correct total.

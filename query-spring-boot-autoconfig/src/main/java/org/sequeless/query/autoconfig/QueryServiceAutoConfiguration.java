@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 
 /**
- * The host-facing query service, over the Field source and the three ports (spec 14, section 5).
+ * The host-facing query service, over the Field source and the three ports.
  *
  * <p>It is a separate autoconfiguration, ordered after {@link QueryAutoConfiguration}, so that the ports it needs
  * are registered before its condition is evaluated. Conditions on beans of the same class depend on the order of

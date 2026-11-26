@@ -1,5 +1,5 @@
 /**
- * The contract tests for the Query ports and their in-memory references (spec 14, section 7.3).
+ * The contract tests for the Query ports and their in-memory references.
  *
  * <p>{@link org.sequeless.query.testkit.BrowseContract}, {@link
  * org.sequeless.query.testkit.ReadContract} and {@link

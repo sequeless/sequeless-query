@@ -8,7 +8,7 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
 /**
- * Mechanically enforced boundaries for the postgres adapter, spec 14 sections 5 and 6.5. The adapter reads
+ * Mechanically enforced boundaries for the postgres adapter. The adapter reads
  * query-core only through its published packages, so it never imports {@code org.sequeless.query.internal}
  * (design-preferences.md). It keeps out the ontology schema contract, as query-core does. Spring is allowed
  * here, because this is the adapter module.
@@ -30,7 +30,7 @@ class BoundaryRulesTest {
             .should()
             .dependOnClassesThat()
             .resideInAPackage("org.sequeless.ontology..")
-            .as("the Query side sees the schema only through the Field contract (query ADR 0001)");
+            .as("the Query side sees the schema only through the Field contract");
 
     @ArchTest
     static final ArchRule depends_only_on_java_and_its_declared_dependencies = noClasses()

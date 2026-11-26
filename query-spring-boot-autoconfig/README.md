@@ -1,6 +1,6 @@
 # query-spring-boot-autoconfig
 
-Spring Boot autoconfiguration of the Query side (spec 14, section 5). It is thin wiring: it builds the Field source, the Postgres ports and the `QueryService` from beans the host already defines, and it adds no logic of its own.
+Spring Boot autoconfiguration of the Query side. It is thin wiring: it builds the Field source, the Postgres ports and the `QueryService` from beans the host already defines, and it adds no logic of its own.
 
 ## What it registers
 
@@ -20,4 +20,4 @@ The `sequeless.query.*` configuration prefix is reserved for this module. It has
 ## Host responsibilities
 
 - The autoconfiguration never connects at startup. The host runs the Query migrations itself, with `org.sequeless.query.postgres.PostgresMigrations.migrate(dataSource)`, before it uses the Query side.
-- The host calls `QueryService.prepare` after each ontology activation (import, reload and startup seed), as ADR 0002 describes.
+- The host calls `QueryService.prepare` after each ontology activation (import, reload and startup seed).

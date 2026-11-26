@@ -4,8 +4,7 @@ import java.util.Objects;
 
 /**
  * The IRI of a property, as a key of an object view's {@code properties}. A property key is one
- * IRI. A traversal key is never a {@code PropertyRef}: it is the {@code |}-joined encoding of
- * spec 14, section 6.5.
+ * IRI. A traversal key is never a {@code PropertyRef}: it is the {@code |}-joined encoding.
  *
  * @param iri the property IRI; never {@code null} or blank
  */

@@ -21,15 +21,15 @@ import org.sequeless.query.field.api.FieldType;
  * operators are, for each operator filter-core's default registry applies to that type and format,
  * the canonical name and then each alias of that operator. The aliases are listed because
  * {@code FilterValidator} compares the operator text of a filter literally with this list, so a
- * filter that says {@code gte} would otherwise be rejected although its type is right (spec 14,
- * Q30). No filter-core JSON type leaves this class.
+ * filter that says {@code gte} would otherwise be rejected although its type is right.
+ * No filter-core JSON type leaves this class.
  *
  * <p>The list is only compared, never shown: filter-core's error text does not print it, and its
  * schema provider compares canonical names only, so the aliases change no message. When filter-core
- * issue sequeless/sequeless-filter#39 ships, the aliases are removed from this list (spec 14, Q30).
+ * issue sequeless/sequeless-filter#39 ships, the aliases are removed from this list.
  *
- * <p>This is public API, not internal, because the postgres adapter builds its filter registry here
- * (spec 14, step 2a). It cannot reach a package-private bridge, and api may not depend on internal.
+ * <p>This is public API, not internal, because the postgres adapter builds its filter registry here.
+ * It cannot reach a package-private bridge, and api may not depend on internal.
  */
 public final class FieldRegistries {
 

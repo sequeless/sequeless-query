@@ -9,8 +9,8 @@ import org.sequeless.filter.sql.spi.QueryBuilder;
 import org.sequeless.query.field.api.FieldType;
 
 /**
- * A {@link QueryBuilder} that coerces each bind value to the Java type of its Field, then delegates the rendering
- * (spec 14, section 6.4). The translator passes values as plain JSON-derived Java types, so {@code 2026-02-01} arrives
+ * A {@link QueryBuilder} that coerces each bind value to the Java type of its Field, then delegates the rendering.
+ * The translator passes values as plain JSON-derived Java types, so {@code 2026-02-01} arrives
  * as a {@link String}. The expression it compares against needs a {@code date}, so {@link ValueConverter} converts it.
  *
  * <p>The Field is recognised by its expression text. {@link FieldExpressions#sqlOf} gives one text per Field, so

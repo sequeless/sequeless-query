@@ -14,7 +14,7 @@
   <artifactId>query-postgres-jsonb-adapter</artifactId>
   <version>0.2.1</version>
   <name>query-postgres-jsonb-adapter</name>
-  <description>PostgreSQL JSONB adapter for the Query side: the Field-to-SQL expressions, the filter FieldResolver, the browse port, index preparation and the Query migrations (spec 14, section 6.4)</description>
+  <description>PostgreSQL JSONB adapter for the Query side: the Field-to-SQL expressions, the filter FieldResolver, the browse port, index preparation and the Query migrations</description>
 
   <properties>
     <!-- The deploy URL is built from this name; it must name this repository (the parent defaults to sequeless-build). -->
@@ -22,7 +22,7 @@
     <!-- Matches query-core: this module reads query-core and query-field classes compiled for 25. -->
     <maven.compiler.release>25</maven.compiler.release>
     <!-- Not a core module: Spring JDBC and Flyway are its job, so the parent's enforcer ban stays off. -->
-    <!-- Published: the BOM resolves it (spec 14, sections 7.1 and 7.2). Released by release-please, first at 0.1.0. -->
+    <!-- Published: the BOM resolves it. Released by release-please, first at 0.1.0. -->
     <maven.deploy.skip>false</maven.deploy.skip>
     <!-- The version the org's Spring modules pin (automation-temporal-adapter, expression-spring-boot-autoconfig). -->
     <spring-boot.version>4.1.1</spring-boot.version>
@@ -66,7 +66,7 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- Compile dependencies, spec 14 section 5. Each is declared only when the main code imports it, because
+    <!-- Compile dependencies. Each is declared only when the main code imports it, because
          dependency:analyze fails on an unused compile-scope declaration. -->
     <dependency>
       <groupId>org.sequeless</groupId>

@@ -14,7 +14,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Mechanically enforced boundaries for the Spring Boot autoconfiguration (spec 14, section 5). Spring is allowed
+ * Mechanically enforced boundaries for the Spring Boot autoconfiguration. Spring is allowed
  * here, because this is the adapter-side wiring module. The module wires the query side through its published
  * packages only: it never imports {@code org.sequeless.query.internal}, except that the composition seam
  * {@code QueryServiceFactory} lives in {@code api}. Of the ontology schema contract it names only the
@@ -38,7 +38,7 @@ class BoundaryRulesTest {
             .should()
             .dependOnClassesThat(resideInAPackage("org.sequeless.ontology..")
                     .and(DescribedPredicate.not(equivalentTo(SchemaSource.class))))
-            .as("the Query side sees the schema only through the Field contract (query ADR 0001); "
+            .as("the Query side sees the schema only through the Field contract; "
                     + "the host's SchemaSource bean type is the single exception");
 
     /**
@@ -55,7 +55,7 @@ class BoundaryRulesTest {
             .dependOnClassesThat()
             .resideInAPackage("org.sequeless.ontology..")
             .as("the schema contract is named only by the composition root: the @AutoConfiguration and @Configuration "
-                    + "classes (spec 14, section 5)");
+                    + "classes");
 
     @ArchTest
     static final ArchRule depends_only_on_java_and_its_declared_dependencies = noClasses()

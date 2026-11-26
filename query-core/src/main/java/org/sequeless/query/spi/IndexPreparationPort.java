@@ -18,7 +18,7 @@ import org.sequeless.query.field.api.OntologyVersionRef;
  * handling, the result (the newly registered searchable Fields, one per distinct search key, sorted
  * by that key), idempotence, immutability, the version not being checked against the Fields, and
  * per-tenant registration. It does not assert index structures or derived state. Each adapter's own
- * tests assert its index DDL and its completion (spec 14, section 6.2).
+ * tests assert its index DDL and its completion.
  *
  * <ul>
  *   <li><b>Null handling.</b> Every argument must be non-{@code null}. A conforming implementation
@@ -33,7 +33,7 @@ import org.sequeless.query.field.api.OntologyVersionRef;
  *       sortable} and {@code searchable} matter here: a Field with {@code facetable} or {@code
  *       sortable} gets an expression index, whether it is a direct property or one reached through
  *       a relationship; a Field with {@code searchable} is registered for full-text search; a Field
- *       that is {@code filterable} alone gets no index (ADR 0002).
+ *       that is {@code filterable} alone gets no index.
  *   <li><b>{@link #prepare} is idempotent.</b> The host calls it after every ontology activation,
  *       so it is called repeatedly with the same version. A repeat call with the same version must
  *       not fail, error, or accumulate duplicate index structures, and returns an empty {@code
@@ -41,7 +41,7 @@ import org.sequeless.query.field.api.OntologyVersionRef;
  *   <li><b>The result lists the newly added search registrations, in key order.</b> {@code
  *       newlyRegistered} holds one {@code FieldPath} per distinct search key that this call newly
  *       registered: a searchable Field only, whatever its type. Expression-index registrations are not
- *       listed. The key is the segment property IRIs joined by {@code |} (spec 14, section 6.5). The
+ *       listed. The key is the segment property IRIs joined by {@code |}. The
  *       entries are sorted by that key in {@link String#compareTo} order. Two root classes that reach
  *       the same key give one entry, whatever the order of {@code rootFields}.
  *   <li><b>The result is immutable.</b> The caller cannot change the list in {@code newlyRegistered}.
@@ -61,7 +61,7 @@ public interface IndexPreparationPort {
      * already stored. The caller learns from the returned {@link IndexPreparationResult} which
      * searchable Fields were newly registered, and recomputes the full-text data of existing
      * objects when that list is not empty. Returns once the preparation is done or durably
-     * accepted (ADR 0002).
+     * accepted.
      *
      * @param tenant the tenant whose indexes are prepared; must not be {@code null}
      * @param version the ontology version the caller is activating; must not be {@code null}; not

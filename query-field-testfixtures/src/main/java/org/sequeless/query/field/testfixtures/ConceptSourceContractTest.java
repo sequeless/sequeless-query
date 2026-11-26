@@ -23,8 +23,8 @@ import org.sequeless.query.field.spi.ConceptSource;
  * #categoriesConcepts()} builds. A concrete subclass supplies only {@link #sourceFor()} — a {@code
  * ConceptSource} that serves exactly that scheme, built from exactly {@link #categoriesConcepts()}
  * so the seed data behind the assertions here and the seed data behind the source under test never
- * drift apart — and inherits every test unchanged. See {@code docs/specs/field-contract.md}
- * and {@code package-info}.
+ * drift apart — and inherits every test unchanged. See
+ * {@code package-info}.
  */
 public abstract class ConceptSourceContractTest {
 

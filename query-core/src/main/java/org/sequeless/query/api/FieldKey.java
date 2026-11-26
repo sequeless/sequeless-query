@@ -8,8 +8,7 @@ import org.sequeless.query.field.api.FieldPath;
 import org.sequeless.query.field.api.PathSegment;
 
 /**
- * The one place the {@code FieldRegistry} key of a traversal path is built and read (spec 14,
- * section 6.5).
+ * The one place the {@code FieldRegistry} key of a traversal path is built and read.
  *
  * <p>A Field's key is the IRIs of its segments joined by {@code |} (U+007C), with no spaces, in path
  * order. A single-segment key is the bare property IRI, so a direct Field keeps the key it always

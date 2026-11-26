@@ -22,7 +22,7 @@ import java.util.UUID;
  * @param propertyId the durable identity of the property that carries this relationship; never
  *     {@code null}
  * @param iri the property's IRI; the Query side's FieldRegistry key is built from these IRIs joined
- *     by '|' (spec 14 section 6.5); never {@code null}, blank, or containing '|'
+ *     by '|'; never {@code null}, blank, or containing '|'
  * @param slug the current short name of the property, used for presentation; never {@code null} or
  *     blank
  * @param label the current human-facing display name of the relationship; never {@code null}

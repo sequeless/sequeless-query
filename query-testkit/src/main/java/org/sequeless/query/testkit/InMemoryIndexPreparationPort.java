@@ -24,7 +24,7 @@ import org.sequeless.query.spi.IndexPreparationPort;
  * against. It records the searchable Fields registered for each tenant, synchronously, and reports a
  * Field as newly registered only the first time the tenant is prepared with it.
  *
- * <p>Registrations are keyed by the Field's registration key (spec 14, section 6.5). The result has
+ * <p>Registrations are keyed by the Field's registration key. The result has
  * one entry per distinct key, sorted by that key. When two Fields share a key but not a path, the
  * one first by slug path, then by id path, is reported, so the result does not depend on the order
  * of {@code rootFields}.
@@ -83,7 +83,7 @@ public final class InMemoryIndexPreparationPort implements IndexPreparationPort 
         return order.compare(left, right) <= 0 ? left : right;
     }
 
-    /** The segment IRIs joined by {@code |}, the FieldRegistry key of spec 14, section 6.5. */
+    /** The segment IRIs joined by {@code |}, the FieldRegistry key. */
     private static String keyOf(FieldPath path) {
         return path.segments().stream().map(PathSegment::iri).collect(Collectors.joining("|"));
     }

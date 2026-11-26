@@ -1,7 +1,7 @@
 -- TEST ONLY. Copied from prototype commit 48a0cc6, sequeless-adapter-persistence-postgres, the Command migration
 -- src/main/resources/db/migration/sequeless/postgres/V6__search_vector_command.sql, unchanged. It is
 -- applied by the ITs before the Query migrations, so the Query side has sq_object.search_vector and its
--- trigger. It must not be shipped as a migration of this module (spec 14, section 2.3, Q5).
+-- trigger. It must not be shipped as a migration of this module.
 
 -- Command side of the search column (spec 13, P7). The Query migration set (postgres-query) owns the
 -- index registries and the GIN index. This set keeps what writes sq_object: the search_vector column,

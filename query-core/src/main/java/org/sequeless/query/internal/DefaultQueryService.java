@@ -41,7 +41,7 @@ import org.sequeless.query.spi.ReadPort;
  * The Query side's use cases: browse, read and index preparation, over the driven ports.
  *
  * <p>Browse resolves the scope from the request, checks the query against that scope, and only then
- * calls the browse port. Index preparation applies the version guard of ADR 0002 before it calls the
+ * calls the browse port. Index preparation applies the version guard before it calls the
  * port.
  */
 public final class DefaultQueryService implements QueryService {
@@ -110,7 +110,7 @@ public final class DefaultQueryService implements QueryService {
                 throw new IllegalStateException("resolved root does not match the listed root: " + root.iri());
             }
             if (!rootScope.ontologyVersions().contains(version)) {
-                // ADR 0002: a newer activation has superseded this call; do nothing.
+                // A newer activation has superseded this call; do nothing.
                 return IndexPreparationResult.EMPTY;
             }
             rootFields.put(root, rootScope.facets());

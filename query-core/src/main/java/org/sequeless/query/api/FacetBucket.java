@@ -4,7 +4,7 @@ import java.util.Objects;
 
 /**
  * One bucket of a facet: a value and the number of matching objects that hold it. The name is
- * kept from the prototype (spec 14, section 4.3).
+ * kept from the prototype.
  *
  * @param value the facet value; never {@code null}
  * @param count the number of matching objects holding the value; never negative

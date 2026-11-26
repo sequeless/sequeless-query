@@ -12,7 +12,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * The PostgreSQL {@link ReadPort} over {@code sq_object} (spec 14, sections 6.1 and 6.4).
+ * The PostgreSQL {@link ReadPort} over {@code sq_object}.
  *
  * <p>A read is one {@code SELECT} of the row whose {@code id} is the request's, under two further conditions: the tenant
  * is the scope's ({@code tenant_id = ?}), and the object is not soft-deleted ({@code deleted_at IS NULL}). The port takes

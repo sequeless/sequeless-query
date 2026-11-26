@@ -7,7 +7,7 @@ import org.sequeless.query.field.api.LocalizedText;
 /**
  * Identity and naming rules shared by every mapping in this module.
  *
- * <p>The IRI is the identity the Query side keys on (spec 14, section 6.5). The id of a property or a
+ * <p>The IRI is the identity the Query side keys on. The id of a property or a
  * class is a name-based UUID of its IRI, so the same IRI yields the same id in every activation.
  */
 final class Iris {
