@@ -131,7 +131,7 @@ New in query-field: `OntologyVersionRef`, a record of one `int` value of at leas
 
 | Name | Kind | Note |
 |---|---|---|
-| `BrowseQuery` | Record | `FilterNode filter` (optional), `Optional<String> text`, `List<Sort> sorts`, `Page page`, `List<FieldPath> facets` (Q2) |
+| `BrowseQuery` | Record | `Optional<FilterNode> filter`, `Optional<String> text`, `List<Sort> sorts`, `Page page`, `List<FieldPath> facets` (Q2) |
 | `BrowseResult` | Record | `List<ObjectView> items`, `long total`, `Map<FieldPath, List<FacetBucket>> facets` |
 | `ObjectView` | Record | `ObjectId id`, `TypeRef type`, `TenantId tenant`, `long version`, `Optional<String> state`, `Map<PropertyRef, Value> properties`, `Audit audit`, `boolean deleted` |
 | `TypeRef`, `PropertyRef` | Records | Each wraps one IRI `String` (Q6). A property key is one IRI. A traversal key is the `\|`-joined encoding of section 6.5, and is never a `PropertyRef` |
@@ -165,10 +165,12 @@ ArchUnit: every module has a `BoundaryRulesTest` (ADR kernel 0001 and spec 11 se
 
 - `BrowsePort.browse(FieldScope scope, BrowseQuery query)` returns `BrowseResult`. The tenant is `scope.request().tenantId()`. The authorization `Scope` is not an input (#24 point 2).
 - `FilterNode` is validated by filter-core's `FilterValidator` against the `FieldRegistry` bridged from the `FieldScope` (section 6.5). The adapter translates the validated node; it does not parse text.
-- `Sort.path` must be a sortable Field of the scope. Results are ordered as the prototype's `BrowsePort` javadoc states (sort keys, then id, then relevance, then `createdAt`, then id).
+- `Sort.path` must be a sortable Field of the scope. Results are ordered as the prototype's `BrowsePort` javadoc states: with sorts, each sort key in list order and then `id`; otherwise with free text, relevance first, then `createdAt` and then `id`; otherwise `createdAt` and then `id`. The javadoc of `query-core`'s `BrowsePort` carries the full rule.
 - Soft-deleted objects are never visible. The port has no `includeDeleted` (#16 point 10).
 - Paging is offset-based (`Page`, #16 point 11).
-- Facet counts use the conventional multi-select rule of the prototype's javadoc: a facet's own filter does not narrow its counts. Facets are returned only for Fields with `facetable` (#14).
+- **Candidates (Q15).** A Browse matches only objects whose type is in `scope.concreteTypes()`, the root and its concrete subtypes (#16 point 7). The port does no hierarchy reasoning. An abstract root with no concrete subtypes gives an empty result with no error.
+- **Multi-select facet counts (Q14).** For a facet on path P, the counts are computed with the filter minus its top-level AND conjuncts that are a `FieldFilter` on P (compared by the Q7 key). Every other conjunct is kept whole, including any `OrFilter` or `AnyFilter` that mentions P. If the filter is not an `AndFilter`, it counts as one conjunct; if it is a `FieldFilter` on P, it is removed and the result is match-all. The free-text condition narrows every facet, as in the prototype.
+- Facets are returned only for Fields with `facetable` (#14). A sort key on a relationship Field orders by target id, as the prototype's javadoc states.
 
 ### 6.2 Index preparation
 

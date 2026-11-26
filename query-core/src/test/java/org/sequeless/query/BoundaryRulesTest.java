@@ -9,10 +9,10 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 
 /**
- * Mechanically enforced hexagonal boundaries for this module. Four rules, copied from
- * ontology's facet-core (spec 2, §5). When a repo adds a Sequeless dependency, widen the fourth
- * rule to that dependency's package. An adapter module drops that rule and relies on Maven
- * dependency declarations instead.
+ * Mechanically enforced hexagonal boundaries for query-core, spec 14 section 5 and query ADR 0001.
+ * The template's rules stay. The dependency rule is widened to query-core's declared compile
+ * dependencies (query-field, filter-core, kernel-identity, kernel-values), and the schema contract
+ * stays out: no class may depend on {@code org.sequeless.ontology..}.
  */
 @AnalyzeClasses(
         packages = "org.sequeless.query",
@@ -26,7 +26,14 @@ class BoundaryRulesTest {
             .resideInAnyPackage("org.springframework..")
             .as("this module must stay transport-agnostic: no Spring dependency");
 
-    // TODO: drop allowEmptyShould once real types land in api/spi. There are none yet.
+    @ArchTest
+    static final ArchRule module_is_free_of_the_schema_contract = noClasses()
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage("org.sequeless.ontology..")
+            .as("query-core must not depend on the ontology schema contract (query ADR 0001); "
+                    + "the Field contract is the only view of the schema it may use");
+
     @ArchTest
     static final ArchRule api_and_spi_types_are_public = classes()
             .that()
@@ -37,8 +44,7 @@ class BoundaryRulesTest {
             .haveSimpleNameNotEndingWith("package-info")
             .should()
             .bePublic()
-            .as("the published contract (api + spi) must be exported as public types")
-            .allowEmptyShould(true);
+            .as("the published contract (api + spi) must be exported as public types");
 
     @ArchTest
     static final ArchRule api_and_spi_never_depend_on_internal = noClasses()
@@ -50,9 +56,16 @@ class BoundaryRulesTest {
             .as("api and spi must not depend on internal, which is implementation detail");
 
     @ArchTest
-    static final ArchRule module_depends_only_on_java_and_itself = noClasses()
+    static final ArchRule module_depends_only_on_java_and_its_declared_dependencies = noClasses()
             .should()
             .dependOnClassesThat()
-            .resideOutsideOfPackages("java..", "org.sequeless.query..")
-            .as("this module depends on the JDK and itself only; widen per declared dependency");
+            .resideOutsideOfPackages(
+                    "java..",
+                    "org.sequeless.query..",
+                    "org.sequeless.kernel.identity..",
+                    "org.sequeless.kernel.values..",
+                    "org.sequeless.filter.api..")
+            .as(
+                    "query-core depends on the JDK, itself, and the Sequeless packages it imports only "
+                            + "(query-field, filter-core api, kernel-identity, kernel-values); javax and jakarta are not allowed");
 }
