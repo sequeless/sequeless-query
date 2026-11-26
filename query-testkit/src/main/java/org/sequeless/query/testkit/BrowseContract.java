@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.sequeless.filter.api.FilterNode;
 import org.sequeless.filter.api.Filters;
@@ -47,6 +48,7 @@ import org.sequeless.query.api.PropertyRef;
 import org.sequeless.query.api.Sort;
 import org.sequeless.query.field.api.FieldPath;
 import org.sequeless.query.field.api.FieldScope;
+import org.sequeless.query.field.api.PathSegment;
 import org.sequeless.query.spi.BrowsePort;
 
 /**
@@ -252,13 +254,25 @@ public abstract class BrowseContract {
     @Test
     void traversalPathFilterIsRejectedAsInvalidQuery() {
         Environment env = freshEnvironment();
-        // belongsToProject|projectName is a real, filterable traversal Field of the expanded scope, so only its shape
-        // is rejected.
+        // belongsToProject.name is a real, filterable traversal Field of the expanded scope, so only its shape is
+        // rejected.
         FieldScope scope = QueryFixtures.taskScopeExpandedToProject(TENANT);
         seedTask(env, BASE, "A task", "OPEN", 1, FEB_1, null, null);
 
-        assertRejectedAsInvalidQuery(
-                env, scope, is(BELONGS_TO_PROJECT_IRI + "|" + PROJECT_NAME_IRI, text("Budget project")));
+        // The key is taken from that Field in the scope, as the sort and facet tests take theirs, so a missing Field
+        // fails the lookup and a hand-built key cannot pass the test.
+        FieldPath projectName = QueryFixtures.facetPath(scope, "belongsToProject.name");
+        assertThat(projectName.isTraversing()).isTrue();
+        String key = projectName.segments().stream().map(PathSegment::iri).collect(Collectors.joining("|"));
+
+        assertThatThrownBy(() ->
+                        env.browsePort().browse(scope, filtered(is(key, text("Budget project")), new Page(0, 20))))
+                .isInstanceOfSatisfying(InvalidQueryException.class, error -> {
+                    assertThat(error.problems()).isNotEmpty();
+                    // The rejection names the traversal path, so it is not an unknown-path rejection.
+                    assertThat(error.problems())
+                            .anySatisfy(problem -> assertThat(problem).contains(key));
+                });
     }
 
     @Test
