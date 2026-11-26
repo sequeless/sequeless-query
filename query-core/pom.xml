@@ -17,6 +17,8 @@
   <description>Query side ports, use cases and the Field-to-filter bridge</description>
 
   <properties>
+    <!-- The deploy URL is built from this name; it must name this repository (the parent defaults to sequeless-build). -->
+    <sequeless.github.repository>sequeless-query</sequeless.github.repository>
     <!-- Matches query-field: this module reads query-field classes compiled for 25. -->
     <maven.compiler.release>25</maven.compiler.release>
     <!-- Opts in to the parent's enforcer ban on Spring, Jena and Lombok (spec 1, §5). -->
