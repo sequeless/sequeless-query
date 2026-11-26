@@ -63,16 +63,15 @@ public final class SchemaFieldSource implements FieldSource {
         TypeDefinition root = root(view, request.root());
         requireActiveVersion(view, request.versionPolicy());
         PropertyMapper mapper = new PropertyMapper(view);
-        List<PropertyDefinition> properties = root.properties();
-        List<Field> facets = properties.stream()
-                .map(property -> mapper.field(mapper.path(property), property))
-                .toList();
+        // A root covers its own properties and every transitive subtype's (spec 17), abstract ones included.
+        List<TypeDefinition> covered = view.typeAndSubtypes(root);
+        List<Field> facets = mapper.unionFields(covered);
         Set<ClassRef> concreteTypes = view.concreteTypes(root);
         String stamp = StampCalculator.stamp(request, view.versions(), concreteTypes);
         return new FieldScope(
                 view.classRef(root),
                 facets,
-                mapper.relationships(properties),
+                mapper.unionRelationships(covered),
                 stamp,
                 view.versions(),
                 concreteTypes,
@@ -88,14 +87,30 @@ public final class SchemaFieldSource implements FieldSource {
         requireActiveVersion(view, request.versionPolicy());
         PropertyMapper mapper = new PropertyMapper(view);
         PathWalk walk = new PathWalk(view, start, request.traversal(), relationship);
+        List<TypeDefinition> covered = view.typeAndSubtypes(start);
 
         List<PathSegment> segments = relationship.segments();
         for (int index = 0; index < segments.size(); index++) {
             PathSegment segment = segments.get(index);
+            List<PropertyDefinition> definitions = definitionsAt(walk, mapper, covered, index, segment);
             // A segment with no target class is a literal end, which cannot be walked into.
-            RelationshipDefinition edge = walk.relationship(segment)
-                    .filter(ignored -> segment.targetClass() != null)
-                    .orElseThrow(() -> new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, relationship));
+            if (definitions.isEmpty() || segment.targetClass() == null) {
+                throw new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, relationship);
+            }
+            // Definitions that disagree name no single target, so no route can be walked through them.
+            if (!PropertyMapper.agree(definitions)) {
+                throw new FieldResolutionException(
+                        FieldErrorCode.CLASS_NOT_REACHABLE, relationship, segment.targetClass());
+            }
+            if (!(definitions.get(0) instanceof RelationshipDefinition edge)) {
+                throw new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, relationship);
+            }
+            // A root hop names its target too. A caller target that is not the edge's target is refused before the
+            // walk enters anything. Deeper hops are not compared; that is a pre-existing gap.
+            if (index == 0 && !segment.targetClass().iri().equals(edge.targetTypeIri())) {
+                throw new FieldResolutionException(
+                        FieldErrorCode.CLASS_NOT_REACHABLE, relationship, segment.targetClass());
+            }
             walk.checkRevisit(view.targetRef(edge.targetTypeIri()));
             walk.checkDepth(index);
             walk.enter(edge);
@@ -123,33 +138,47 @@ public final class SchemaFieldSource implements FieldSource {
         requireActiveVersion(view, request.versionPolicy());
         PropertyMapper mapper = new PropertyMapper(view);
         PathWalk walk = new PathWalk(view, root, request.traversal(), path);
+        List<TypeDefinition> covered = view.typeAndSubtypes(root);
 
         List<PathSegment> segments = path.segments();
         int last = segments.size() - 1;
         for (int index = 0; index <= last; index++) {
             PathSegment segment = segments.get(index);
             boolean terminal = index == last;
-            PropertyDefinition property = walk.find(segment)
-                    .orElseThrow(() -> terminal
-                            ? new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, path)
-                            : new FieldResolutionException(
-                                    FieldErrorCode.CLASS_NOT_REACHABLE, path, segment.targetClass()));
-            if (!terminal && !(property instanceof RelationshipDefinition)) {
+            List<PropertyDefinition> definitions = definitionsAt(walk, mapper, covered, index, segment);
+            if (definitions.isEmpty()) {
+                throw terminal
+                        ? new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, path)
+                        : new FieldResolutionException(FieldErrorCode.CLASS_NOT_REACHABLE, path, segment.targetClass());
+            }
+            PropertyDefinition property = definitions.get(0);
+            // Definitions that disagree name no single kind or target, so no route can be walked through them.
+            boolean walkable = PropertyMapper.agree(definitions) && property instanceof RelationshipDefinition;
+            if (!terminal && !walkable) {
                 throw new FieldResolutionException(FieldErrorCode.CLASS_NOT_REACHABLE, path, segment.targetClass());
             }
-            // Only a hop that walks into a relationship is guarded; the terminal segment is never walked into.
-            if (!terminal && property instanceof RelationshipDefinition relationship) {
+            if (!terminal) {
+                // Only a hop that walks into a relationship is guarded; the terminal segment is never walked into.
+                RelationshipDefinition relationship = (RelationshipDefinition) property;
+                // A root hop names its target too; a null target is not compared here, as before. Deeper hops are
+                // not compared, which is a pre-existing gap.
+                if (index == 0
+                        && segment.targetClass() != null
+                        && !segment.targetClass().iri().equals(relationship.targetTypeIri())) {
+                    throw new FieldResolutionException(FieldErrorCode.CLASS_NOT_REACHABLE, path, segment.targetClass());
+                }
                 walk.checkRevisit(view.targetRef(relationship.targetTypeIri()));
                 walk.checkDepth(index);
                 walk.enter(relationship);
+                continue;
             }
-            if (terminal) {
-                Field field = mapper.field(path, property);
-                if (!field.capabilities().filterable()) {
-                    throw new FieldResolutionException(FieldErrorCode.PATH_NOT_FILTERABLE, path);
-                }
-                return field;
+            // A root hop keeps the caller's path when its definitions agree, as origin/main does; a disagreeing
+            // root property is listed with every capability false, so it is refused here as well.
+            Field field = index == 0 ? mapper.unionField(path, definitions) : mapper.field(path, property);
+            if (!field.capabilities().filterable()) {
+                throw new FieldResolutionException(FieldErrorCode.PATH_NOT_FILTERABLE, path);
             }
+            return field;
         }
         // Unreachable: FieldPath's constructor guarantees at least one segment, so the terminal hop returns.
         throw new IllegalStateException("path must have at least one segment");
@@ -175,6 +204,19 @@ public final class SchemaFieldSource implements FieldSource {
             throw unknown;
         }
         return new SchemaView(schema);
+    }
+
+    /**
+     * The definitions a path segment names on the class the walk is at, empty when none does. The root hop
+     * (index 0) reads the union of the root's and its subtypes' definitions, as resolve() does (spec 17), so
+     * describe() and expand() agree with resolve() on a root's properties. A deeper hop reads only the class
+     * the walk has entered.
+     */
+    private static List<PropertyDefinition> definitionsAt(
+            PathWalk walk, PropertyMapper mapper, List<TypeDefinition> covered, int index, PathSegment segment) {
+        return index == 0
+                ? mapper.groupNamed(covered, segment)
+                : walk.find(segment).stream().toList();
     }
 
     private static TypeDefinition root(SchemaView view, ClassRef root) {

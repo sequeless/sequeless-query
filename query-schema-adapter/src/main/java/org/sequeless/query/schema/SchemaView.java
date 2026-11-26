@@ -1,6 +1,7 @@
 package org.sequeless.query.schema;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -90,12 +91,31 @@ final class SchemaView {
      */
     Set<ClassRef> concreteTypes(TypeDefinition root) {
         Set<ClassRef> concrete = new LinkedHashSet<>();
-        for (TypeDefinition type : types) {
-            if (!type.isAbstract() && (type.iri().equals(root.iri()) || reaches(type, root.iri()))) {
+        for (TypeDefinition type : typeAndSubtypes(root)) {
+            if (!type.isAbstract()) {
                 concrete.add(classRef(type));
             }
         }
         return concrete;
+    }
+
+    /**
+     * The root and every transitive subtype of it, abstract ones included: the walk {@link
+     * #concreteTypes} filters, before the filter. The root comes first, then its subtypes in the
+     * Schema's own order.
+     *
+     * @param root a type of this Schema
+     * @return the root and every type that reaches it through superTypes, each once
+     */
+    List<TypeDefinition> typeAndSubtypes(TypeDefinition root) {
+        List<TypeDefinition> covered = new ArrayList<>();
+        covered.add(root);
+        for (TypeDefinition type : types) {
+            if (!type.iri().equals(root.iri()) && reaches(type, root.iri())) {
+                covered.add(type);
+            }
+        }
+        return covered;
     }
 
     /** Whether {@code ancestorIri} is reached from {@code type} by following superTypes transitively. */
