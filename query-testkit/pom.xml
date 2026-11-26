@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Pinned to a released sequeless-build-parent (spec 1). Renovate bumps it. -->
+  <parent>
+    <groupId>org.sequeless</groupId>
+    <artifactId>sequeless-build-parent</artifactId>
+    <version>0.1.3</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>org.sequeless</groupId>
+  <artifactId>query-testkit</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>query-testkit</name>
+  <description>Contract tests and in-memory references for the Query ports: BrowsePort, ReadPort and IndexPreparationPort (spec 14, section 7.3)</description>
+
+  <properties>
+    <!-- Matches query-core: this module reads query-core and query-field classes compiled for 25. -->
+    <maven.compiler.release>25</maven.compiler.release>
+    <!-- Opts in to the parent's enforcer ban on Spring, Jena and Lombok: the testkit has no Spring (spec 14, section 5). -->
+    <sequeless.enforcer.core.skip>false</sequeless.enforcer.core.skip>
+    <!-- Not deployed from the template repo itself (spec 2, section 6), as query-core. -->
+    <maven.deploy.skip>true</maven.deploy.skip>
+    <filter-core.version>0.1.4</filter-core.version>
+    <kernel-identity.version>0.1.1</kernel-identity.version>
+    <kernel-values.version>0.1.1</kernel-values.version>
+    <!-- Same release as filter-core 0.1.4 resolves transitively, so the direct declaration does not change the tree. -->
+    <jackson.version>2.23.0</jackson.version>
+    <assertj.version>3.27.7</assertj.version>
+    <junit.version>6.1.3</junit.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Spec 1: library repos import junit-bom in their own POM. The parent does not manage JUnit. -->
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- Compile dependencies, spec 14 section 5: query-core and query-field-testfixtures. The rest are declared
+         directly because the testkit imports their types, and dependency:analyze fails on used-undeclared classes. -->
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-field</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-field-testfixtures</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>filter-core</artifactId>
+      <version>${filter-core.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>kernel-identity</artifactId>
+      <version>${kernel-identity.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>kernel-values</artifactId>
+      <version>${kernel-values.version}</version>
+    </dependency>
+    <!-- The in-memory browse port evaluates filter values, which filter-core carries as Jackson JsonNode. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <!-- The contracts are JUnit classes and use AssertJ, so both are compile scope, as in query-field-testfixtures. -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- The boundary test imports these directly, so they stay declared, or dependency:analyze reports them as used undeclared. -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>github</id>
+      <url>https://maven.pkg.github.com/sequeless/*</url>
+    </repository>
+  </repositories>
+</project>
