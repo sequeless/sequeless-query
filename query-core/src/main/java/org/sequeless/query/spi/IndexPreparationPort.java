@@ -14,9 +14,10 @@ import org.sequeless.query.field.api.OntologyVersionRef;
  * calls it after every ontology activation (import, reload and startup), and adapters implement it.
  *
  * <p>This javadoc is the full behavioural contract every implementation must satisfy. The
- * query-testkit's {@code IndexPreparationContract} asserts the clauses that the port exposes: the
- * result, its order, idempotence, null handling and per-tenant registration. It does not assert
- * index structures or derived state. Each adapter's own tests assert its index DDL and its
+ * query-testkit's {@code IndexPreparationContract} asserts the clauses that the port exposes: null
+ * handling, the result (one entry per distinct registration key, sorted by that key), idempotence,
+ * immutability, the version not being checked against the Fields, and per-tenant registration. It does
+ * not assert index structures or derived state. Each adapter's own tests assert its index DDL and its
  * completion (spec 14, section 6.2).
  *
  * <ul>
@@ -38,10 +39,11 @@ import org.sequeless.query.field.api.OntologyVersionRef;
  *       not fail, error, or accumulate duplicate index structures, and returns an empty {@code
  *       newlyRegistered}.
  *   <li><b>The result is one entry per registration key, in key order.</b> {@code newlyRegistered}
- *       holds one Field per distinct key, where the key is the segment property IRIs joined by
+ *       holds one {@code FieldPath} per distinct key, where the key is the segment property IRIs joined by
  *       {@code |} (spec 14, section 6.5). The entries are sorted by that key in {@link
  *       String#compareTo} order. Two root classes that reach the same key give one entry, whatever
  *       the order of {@code rootFields}.
+ *   <li><b>The result is immutable.</b> The caller cannot change the list in {@code newlyRegistered}.
  *   <li><b>{@link #prepare} is a no-op for Fields with no indexing needs.</b> A {@code rootFields}
  *       map whose Fields are none of {@code facetable}, {@code sortable} or {@code searchable}, or
  *       an empty map, must not cause {@link #prepare} to fail; it simply has nothing to prepare.
