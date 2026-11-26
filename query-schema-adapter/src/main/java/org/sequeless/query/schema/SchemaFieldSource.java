@@ -32,7 +32,8 @@ import org.sequeless.query.field.spi.FieldSource;
  * it. Every call reads the Schema afresh, so a new activation is visible on the next call.
  *
  * <p>The Schema says nothing about walkability or readability, so every relationship is walkable and
- * no principal is denied. Only this module reads {@code schema-contract}.
+ * no principal is denied. Only this module calls {@link SchemaSource}; the Spring Boot autoconfiguration
+ * names its type only to wire this class.
  *
  * <p>{@link #expand}, like {@link #resolve} and {@link #describe}, throws {@code VERSION_NOT_FOUND} for a
  * {@link VersionPolicy.Pinned} version that is not the active one.
