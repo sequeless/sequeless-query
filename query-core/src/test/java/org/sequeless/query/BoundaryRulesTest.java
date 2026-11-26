@@ -46,10 +46,16 @@ class BoundaryRulesTest {
             .bePublic()
             .as("the published contract (api + spi) must be exported as public types");
 
+    /**
+     * The one exception is {@code QueryServiceFactory}, the composition seam: it builds the internal service
+     * so that no other module reaches into {@code internal} (spec 14, section 5).
+     */
     @ArchTest
     static final ArchRule api_and_spi_never_depend_on_internal = noClasses()
             .that()
             .resideInAnyPackage("org.sequeless.query.api..", "org.sequeless.query.spi..")
+            .and()
+            .doNotHaveFullyQualifiedName("org.sequeless.query.api.QueryServiceFactory")
             .should()
             .dependOnClassesThat()
             .resideInAnyPackage("org.sequeless.query.internal..")

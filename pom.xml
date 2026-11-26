@@ -28,6 +28,7 @@
     <module>query-schema-adapter</module>
     <module>query-testkit</module>
     <module>query-postgres-jsonb-adapter</module>
+    <module>query-spring-boot-autoconfig</module>
   </modules>
 
   <repositories>
