@@ -60,6 +60,8 @@ final class FieldRegistryBridge {
     private static JsonSchemaShape shapeOf(FieldType type) {
         return switch (type) {
             case STRING, LANG_STRING, IRI_REF, CONCEPT_REF, BINARY, GEO, UNKNOWN -> new JsonSchemaShape("string", null);
+            // An object id is a UUID string, not an IRI, so it has its own format.
+            case OBJECT_REF -> new JsonSchemaShape("string", "uuid");
             case INTEGER -> new JsonSchemaShape("integer", null);
             case DECIMAL -> new JsonSchemaShape("number", null);
             case BOOLEAN -> new JsonSchemaShape("boolean", null);

@@ -34,6 +34,16 @@ class FieldRegistryBridgeTest {
     }
 
     @Test
+    void aFilterableObjectRefFieldIsRegisteredWithTheUuidFormat() {
+        Field author = field(path("urn:ont:author"), FieldType.OBJECT_REF, FILTER_ONLY);
+
+        FieldRegistry registry = FieldRegistryBridge.of(scope(INVOICE, List.of(author)));
+
+        assertThat(registry.find("urn:ont:author").orElseThrow().getJsonSchemaFormat())
+                .isEqualTo("uuid");
+    }
+
+    @Test
     void aTraversalFieldIsRegisteredUnderItsPipeJoinedKey() {
         Field city = field(path("urn:ont:customer", "urn:ont:city"), FieldType.STRING, FILTER_ONLY);
 
@@ -77,6 +87,7 @@ class FieldRegistryBridgeTest {
         "LANG_STRING,string,",
         "IRI_REF,string,",
         "CONCEPT_REF,string,",
+        "OBJECT_REF,string,uuid",
         "BINARY,string,",
         "GEO,string,",
         "UNKNOWN,string,",
