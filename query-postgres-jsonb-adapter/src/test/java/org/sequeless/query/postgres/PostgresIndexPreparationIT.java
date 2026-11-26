@@ -2,6 +2,7 @@ package org.sequeless.query.postgres;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.sequeless.query.postgres.TestFields.direct;
 import static org.sequeless.query.postgres.TestFields.traversal;
 
@@ -18,6 +19,7 @@ import org.sequeless.query.field.api.Field;
 import org.sequeless.query.field.api.FieldType;
 import org.sequeless.query.field.api.LocalizedText;
 import org.sequeless.query.field.api.OntologyVersionRef;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -218,8 +220,47 @@ class PostgresIndexPreparationIT extends AbstractPostgresIT {
                 .isEqualTo("sq_idx_49c7e8886512c951");
     }
 
+    @Test
+    void aFailedRegistryInsertRollsBackTheIndexesOfTheWholeCall() {
+        // "urn:ex:priority" sorts before "urn:ex:status", so its index is created first, in the same transaction.
+        // The registry insert for STATUS then fails, and the whole call must roll back: no sq_idx_ index may remain.
+        Map<ClassRef, List<Field>> roots = Map.of(
+                TASK, List.of(direct(STATUS, FieldType.STRING, FACET_SORT), direct(PRIORITY, FieldType.INTEGER, SORT)));
+        try {
+            failRegistryInsertFor(STATUS);
+
+            assertThatThrownBy(() -> port().prepare(TENANT, V1, roots))
+                    .isInstanceOf(DataAccessException.class)
+                    .hasMessageContaining("test-only registry insert failure");
+        } finally {
+            dropRegistryInsertFailure();
+        }
+
+        assertThat(indexNamesInDatabase()).doesNotContain(PostgresIndexPreparation.indexNameFor("tenant-1", STATUS));
+        assertThat(indexNamesInDatabase()).isEmpty();
+        assertThat(indexRegistrations()).isEmpty();
+    }
+
     private static PostgresIndexPreparation port() {
         return new PostgresIndexPreparation(jdbc(), new DataSourceTransactionManager(dataSource));
+    }
+
+    /** Installs a test-only trigger that makes the registry insert for {@code propertyIri} fail. */
+    private static void failRegistryInsertFor(String propertyIri) {
+        jdbc().sql("CREATE OR REPLACE FUNCTION sq_test_fail_registry_insert() RETURNS trigger LANGUAGE plpgsql AS $$ "
+                        + "BEGIN RAISE EXCEPTION 'test-only registry insert failure'; END; $$")
+                .update();
+        jdbc().sql("CREATE TRIGGER sq_test_fail_registry_insert BEFORE INSERT ON sq_index_registry "
+                        + "FOR EACH ROW WHEN (NEW.property_iri = " + FieldExpressions.literal(propertyIri) + ") "
+                        + "EXECUTE FUNCTION sq_test_fail_registry_insert()")
+                .update();
+    }
+
+    /** Removes the trigger and the function installed by {@link #failRegistryInsertFor}. */
+    private static void dropRegistryInsertFailure() {
+        jdbc().sql("DROP TRIGGER IF EXISTS sq_test_fail_registry_insert ON sq_index_registry")
+                .update();
+        jdbc().sql("DROP FUNCTION IF EXISTS sq_test_fail_registry_insert()").update();
     }
 
     private static JdbcClient jdbc() {
