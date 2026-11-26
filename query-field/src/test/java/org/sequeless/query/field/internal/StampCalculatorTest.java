@@ -124,7 +124,7 @@ class StampCalculatorTest {
     void contentHashMatchesKnownDigestForFixedInput() {
         String stamp = StampCalculator.stamp(fixedInputRequest(), Set.of(V1, V2), ROOT_ONLY);
 
-        // The digest changed for the concreteTypes addition (Q15).
+        // The digest changed for the concreteTypes addition.
         assertThat(stamp).isEqualTo("sha256:3b1bcfa37031c255f2c646d9ab27d5ff6d9074e7d13c2716f1244ece9e70b788");
     }
 

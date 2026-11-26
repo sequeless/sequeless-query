@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- Pinned to a released sequeless-build-parent (spec 1). Renovate bumps it. 0.1.0 was never published to GitHub Packages. -->
+  <!-- Pinned to a released sequeless-build-parent. Renovate bumps it. 0.1.0 was never published to GitHub Packages. -->
   <parent>
     <groupId>org.sequeless</groupId>
     <artifactId>sequeless-build-parent</artifactId>
@@ -21,7 +21,7 @@
     <sequeless.github.repository>sequeless-query</sequeless.github.repository>
     <!-- Matches query-field: this module reads query-field classes compiled for 25. -->
     <maven.compiler.release>25</maven.compiler.release>
-    <!-- Opts in to the parent's enforcer ban on Spring, Jena and Lombok (spec 1, §5). -->
+    <!-- Opts in to the parent's enforcer ban on Spring, Jena and Lombok. -->
     <sequeless.enforcer.core.skip>false</sequeless.enforcer.core.skip>
     <!-- Published: the BOM resolves it. Released by release-please, first at 0.1.0. -->
     <maven.deploy.skip>false</maven.deploy.skip>
@@ -35,7 +35,7 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- Spec 1: library repos import junit-bom in their own POM. The parent does not manage JUnit. -->
+      <!-- Library repos import junit-bom in their own POM. The parent does not manage JUnit. -->
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>

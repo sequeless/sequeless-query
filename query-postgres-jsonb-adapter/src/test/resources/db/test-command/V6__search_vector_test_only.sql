@@ -3,7 +3,7 @@
 -- applied by the ITs before the Query migrations, so the Query side has sq_object.search_vector and its
 -- trigger. It must not be shipped as a migration of this module.
 
--- Command side of the search column (spec 13, P7). The Query migration set (postgres-query) owns the
+-- Command side of the search column. The Query migration set (postgres-query) owns the
 -- index registries and the GIN index. This set keeps what writes sq_object: the search_vector column,
 -- its two functions and its trigger.
 --

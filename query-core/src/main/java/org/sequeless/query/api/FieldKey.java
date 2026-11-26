@@ -12,7 +12,7 @@ import org.sequeless.query.field.api.PathSegment;
  *
  * <p>A Field's key is the IRIs of its segments joined by {@code |} (U+007C), with no spaces, in path
  * order. A single-segment key is the bare property IRI, so a direct Field keeps the key it always
- * had (spec 11, decision 5). The postgres adapter tests a key with {@link #isTraversal(String)} and
+ * had. The postgres adapter tests a key with {@link #isTraversal(String)} and
  * builds each direct Field's expression from its path, so it does not call {@link #decode(String)};
  * {@code decode} is the inverse for callers that need the segment IRIs of a key.
  */

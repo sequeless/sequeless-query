@@ -16,8 +16,8 @@ import org.sequeless.query.field.api.Field;
  * The key is the Field's {@link FieldKey} (the bare IRI of a direct Field), which is the path the
  * filter's FieldRegistry validated.
  *
- * <p>A key with a {@code |} names a traversal, and is rejected with {@link InvalidQueryException} that names the key
- * (Q23). The translator calls this once per path, so it reads a map and builds nothing else.
+ * <p>A key with a {@code |} names a traversal, and is rejected with {@link InvalidQueryException} that names the key.
+ * The translator calls this once per path, so it reads a map and builds nothing else.
  */
 public final class PostgresFieldResolver implements FieldResolver {
 

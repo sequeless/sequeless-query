@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Aggregator only. Never released or deployed (spec 2, §1 and §6).
+  Aggregator only. Never released or deployed.
   Modules take their parent from sequeless-build-parent, not from this POM, so the
   repository entry and the junit-bom import are repeated in query-core/pom.xml.
 -->

@@ -143,7 +143,7 @@ final class BrowseSql {
 
     /**
      * The filter minus its top-level AND conjuncts that are a {@code FieldFilter} on {@code key}. A filter that is not an
-     * {@code AndFilter} is one conjunct. Empty means match-all (Q14).
+     * {@code AndFilter} is one conjunct. Empty means match-all.
      */
     private Optional<FilterNode> filterWithout(String key) {
         if (query.filter().isEmpty()) {

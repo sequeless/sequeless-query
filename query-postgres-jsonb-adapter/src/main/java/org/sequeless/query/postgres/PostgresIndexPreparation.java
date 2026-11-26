@@ -29,7 +29,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * The PostgreSQL {@link IndexPreparationPort}.
  *
  * <p>Only root Fields are prepared: a Field whose path has one segment. A traversal Field is never indexed or
- * registered (Q7). Of each root Field:
+ * registered. Of each root Field:
  *
  * <ul>
  *   <li>a Field that is {@code facetable} or {@code sortable}, and whose expression is IMMUTABLE

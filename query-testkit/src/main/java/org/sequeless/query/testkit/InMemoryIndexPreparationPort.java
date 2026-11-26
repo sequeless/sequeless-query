@@ -47,7 +47,7 @@ public final class InMemoryIndexPreparationPort implements IndexPreparationPort 
         Objects.requireNonNull(version, "version must not be null");
         Objects.requireNonNull(rootFields, "rootFields must not be null");
 
-        // Keyed by the Q7 key and sorted by it, so the result order is fixed by the Fields alone.
+        // Keyed by the registry key and sorted by it, so the result order is fixed by the Fields alone.
         Map<String, FieldPath> searchable = new TreeMap<>();
         for (Map.Entry<ClassRef, List<Field>> root : rootFields.entrySet()) {
             Objects.requireNonNull(root.getKey(), "root class must not be null");

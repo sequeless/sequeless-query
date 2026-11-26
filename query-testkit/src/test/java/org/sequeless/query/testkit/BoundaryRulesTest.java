@@ -12,7 +12,7 @@ import com.tngtech.archunit.lang.ArchRule;
  * Mechanically enforced boundaries for query-testkit.
  * The template's rules stay: no Spring, and no ontology schema contract. The dependency rule is
  * widened to the testkit's declared dependencies. The testkit must not reach into query-core's
- * {@code internal} package, so the Q7 key is decoded only in query-core and is not copied here.
+ * {@code internal} package, so the registry key is decoded only in query-core and is not copied here.
  */
 @AnalyzeClasses(
         packages = "org.sequeless.query.testkit",

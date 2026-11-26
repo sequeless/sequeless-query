@@ -75,9 +75,9 @@ import org.sequeless.query.spi.BrowsePort;
  *
  * <p>Three clauses of {@link BrowsePort} are pinned with fixtures here. A reference facet bucket
  * drops a missing or soft-deleted target. Free text is matched against the root's own
- * searchable Fields, and a traversal Field that an expansion adds is not searched (Q22). A filter,
+ * searchable Fields, and a traversal Field that an expansion adds is not searched. A filter,
  * sort or facet shape the port does not evaluate is rejected with {@link InvalidQueryException}: AnyFilter,
- * a traversal path used as a filter, sort or facet path, {@code like} and {@code not like} (Q23). Free text
+ * a traversal path used as a filter, sort or facet path, {@code like} and {@code not like}. Free text
  * does not reach a property that is searchable only on a concrete subtype. That is a documented limit, so it
  * is not pinned here.
  */
@@ -579,7 +579,7 @@ public abstract class BrowseContract {
     void textSearchReadsOnlyTheRootsSearchableFields() {
         Environment env = freshEnvironment();
         // The expansion adds the Project's searchable name to the scope as a traversal Field. Text search reads only
-        // the root's own searchable Fields (Q22), so the name of the Project a task belongs to does not match the task.
+        // the root's own searchable Fields, so the name of the Project a task belongs to does not match the task.
         FieldScope expanded = QueryFixtures.taskScopeExpandedToProject(TENANT);
 
         ObjectId budgetProject = seedProject(env, BASE, "Budget project", "ACTIVE");
