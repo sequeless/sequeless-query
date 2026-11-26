@@ -74,8 +74,9 @@ import org.sequeless.query.field.api.FieldScope;
  *       covers only the shapes listed in the {@code @throws} clause of {@link #browse}: a filter node
  *       other than {@code AndFilter}, {@code OrFilter} or {@code FieldFilter} (such as {@code AnyFilter});
  *       a traversal path used as a filter, sort or facet path; and the {@code like} and {@code not like}
- *       operators. Operand and value errors are outside the rule. The query-testkit's {@code
- *       BrowseContract} asserts the rejection for each shape listed there.
+ *       operators. Operand and value errors are outside the rule. Each problem names the rejected
+ *       path's key or the rejected node. The query-testkit's {@code BrowseContract} asserts the
+ *       rejection for each shape listed there.
  * </ul>
  */
 public interface BrowsePort {
