@@ -6,6 +6,9 @@
     * org.sequeless:query-postgres-jsonb-adapter bumped to 0.1.1,
     * org.sequeless:query-schema-adapter bumped to 0.1.1
 
+* The following workspace dependencies were updated
+    * org.sequeless:query-schema-adapter bumped to 0.2.2
+
 ## [0.2.1](https://github.com/sequeless/sequeless-query/compare/query-spring-boot-autoconfig-v0.2.0...query-spring-boot-autoconfig-v0.2.1) (2026-11-26)
 
 
