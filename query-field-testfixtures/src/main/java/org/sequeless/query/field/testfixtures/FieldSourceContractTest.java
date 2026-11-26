@@ -50,6 +50,8 @@ public abstract class FieldSourceContractTest {
 
     private static final OntologyVersionRef V1 = new OntologyVersionRef(1);
     private static final OntologyVersionRef V2 = new OntologyVersionRef(2);
+    /** The IRI of a property that exists in no fixture, for paths that must name nothing real. */
+    private static final String UNKNOWN_IRI = "urn:ont:property:unknown";
 
     /**
      * Builds the {@code FieldSource} implementation under test, backed by {@code fixture}.
@@ -115,7 +117,8 @@ public abstract class FieldSourceContractTest {
             if (!isLast) {
                 RelationshipFixture relationship = relationshipOn(current, slug);
                 ClassFixture target = fixture.classNamed(relationship.targetClassSlug());
-                segments.add(new PathSegment(relationship.id(), relationship.slug(), classRefOf(target)));
+                segments.add(new PathSegment(
+                        relationship.id(), relationship.iri(), relationship.slug(), classRefOf(target)));
                 current = target;
             } else {
                 ClassFixture terminalClass = current;
@@ -124,7 +127,7 @@ public abstract class FieldSourceContractTest {
                         .findFirst()
                         .orElseThrow(() -> new IllegalArgumentException(
                                 "no property named '" + slug + "' on class '" + terminalClass.slug() + "'"));
-                segments.add(new PathSegment(property.id(), property.slug(), null));
+                segments.add(new PathSegment(property.id(), property.iri(), property.slug(), null));
             }
         }
         return new FieldPath(segments);
@@ -142,7 +145,8 @@ public abstract class FieldSourceContractTest {
         for (String slug : relationshipSlugs) {
             RelationshipFixture relationship = relationshipOn(current, slug);
             ClassFixture target = fixture.classNamed(relationship.targetClassSlug());
-            segments.add(new PathSegment(relationship.id(), relationship.slug(), classRefOf(target)));
+            segments.add(
+                    new PathSegment(relationship.id(), relationship.iri(), relationship.slug(), classRefOf(target)));
             current = target;
         }
         return new FieldPath(segments);
@@ -151,17 +155,18 @@ public abstract class FieldSourceContractTest {
     /** A single-segment path naming a relationship on {@code fixture}'s root as the terminal segment. */
     private static FieldPath singleRelationshipTerminalPath(ContractFixture fixture, String slug) {
         RelationshipFixture relationship = relationshipOn(fixture.classes().get(0), slug);
-        return new FieldPath(List.of(new PathSegment(relationship.id(), relationship.slug(), null)));
+        return new FieldPath(
+                List.of(new PathSegment(relationship.id(), relationship.iri(), relationship.slug(), null)));
     }
 
     /** A single-segment terminal path naming a property id that exists nowhere in any fixture. */
     private static FieldPath randomTerminalPath() {
-        return new FieldPath(List.of(new PathSegment(UUID.randomUUID(), "unknown", null)));
+        return new FieldPath(List.of(new PathSegment(UUID.randomUUID(), UNKNOWN_IRI, "unknown", null)));
     }
 
     /** A single-segment relationship path naming a property id that exists nowhere in any fixture. */
     private static FieldPath randomRelationshipPath() {
-        return new FieldPath(List.of(new PathSegment(UUID.randomUUID(), "unknown", randomClassRef())));
+        return new FieldPath(List.of(new PathSegment(UUID.randomUUID(), UNKNOWN_IRI, "unknown", randomClassRef())));
     }
 
     private static FieldErrorCode codeOf(ThrowingCallable callable) {

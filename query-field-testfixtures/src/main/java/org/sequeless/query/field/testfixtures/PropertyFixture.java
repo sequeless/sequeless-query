@@ -27,6 +27,7 @@ import org.sequeless.query.field.api.OperatorRestriction;
  * type conflict — the merge then reconciles them by identity, per field-contract.md sections 4.4 and 4.5.
  *
  * @param id the durable identity of this property; never {@code null}
+ * @param iri the property's IRI, stable across a slug rename; never {@code null} or blank, and never containing '|'
  * @param slug the current short name of this property in this version; never {@code null} or
  *     blank
  * @param type this property's type in this version; never {@code null}
@@ -43,6 +44,7 @@ import org.sequeless.query.field.api.OperatorRestriction;
  */
 public record PropertyFixture(
         UUID id,
+        String iri,
         String slug,
         FieldType type,
         Cardinality cardinality,
@@ -56,6 +58,13 @@ public record PropertyFixture(
     /** Validates every required field is present. */
     public PropertyFixture {
         Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(iri, "iri must not be null");
+        if (iri.isBlank()) {
+            throw new IllegalArgumentException("iri must not be blank");
+        }
+        if (iri.contains("|")) {
+            throw new IllegalArgumentException("iri must not contain '|'");
+        }
         Objects.requireNonNull(slug, "slug must not be null");
         if (slug.isBlank()) {
             throw new IllegalArgumentException("slug must not be blank");

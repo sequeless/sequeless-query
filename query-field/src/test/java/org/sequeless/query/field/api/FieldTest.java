@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 class FieldTest {
 
     private static final UUID STATUS_ID = UUID.fromString("00000000-0000-0000-0000-0000000000f1");
+    private static final String STATUS_IRI = "urn:ont:property:Invoice.status";
     private static final OntologyVersionRef V1 = new OntologyVersionRef(1);
     private static final OntologyVersionRef V2 = new OntologyVersionRef(2);
 
@@ -23,7 +24,7 @@ class FieldTest {
     }
 
     private static FieldPath path(String slug) {
-        return new FieldPath(List.of(new PathSegment(STATUS_ID, slug, null)));
+        return new FieldPath(List.of(new PathSegment(STATUS_ID, STATUS_IRI, slug, null)));
     }
 
     private static ClassRef classRef(String slug) {
@@ -67,7 +68,13 @@ class FieldTest {
     @Test
     void relationshipRejectsEmptyDefinedInVersions() {
         assertThatThrownBy(() -> new Relationship(
-                        STATUS_ID, "customer", label("Customer"), classRef("Customer"), Cardinality.SINGLE, Set.of()))
+                        STATUS_ID,
+                        "urn:ont:property:Invoice.customer",
+                        "customer",
+                        label("Customer"),
+                        classRef("Customer"),
+                        Cardinality.SINGLE,
+                        Set.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("definedInVersions");
     }

@@ -18,6 +18,7 @@ Deviations from a pure rename, recorded because the Field contract has no releas
 - `FieldScopeRequest.tenantId` is kernel-identity's `TenantId`, not a `String`. The blank check comes from `TenantId`.
 - Every ontology version identifier is `OntologyVersionRef`, a record over an `int` of at least 1, not a string IRI. The Schema carries only the `int`. The five places are `FieldScope.ontologyVersions`, `Field.definedInVersions`, `Relationship.definedInVersions`, `ConflictingDefinition.version` (renamed from `versionIri`) and `VersionPolicy.Pinned.version` (renamed from `versionIri`).
 - The stamp sorts versions numerically, not as strings, so `10` sorts after `9`. The stamp format therefore differs from the ontology's.
+- `PathSegment` and `Relationship` carry the property IRI (`iri`), because the JSONB store keys properties by IRI and a UUID would need a second lookup that could go stale (Navigator decision Q13).
 
 ## Consequences
 

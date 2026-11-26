@@ -43,7 +43,7 @@ class FieldMergerTest {
     }
 
     private static FieldPath path(UUID propertyId, String slug) {
-        return new FieldPath(List.of(new PathSegment(propertyId, slug, null)));
+        return new FieldPath(List.of(new PathSegment(propertyId, "urn:ont:property:" + propertyId, slug, null)));
     }
 
     private static Field facetWithVersions(
