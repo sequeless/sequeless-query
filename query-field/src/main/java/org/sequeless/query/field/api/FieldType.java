@@ -57,6 +57,12 @@ public enum FieldType {
     /** A reference to a {@code Concept} in a named concept scheme; see {@code ConceptSchemeRef}. */
     CONCEPT_REF,
 
+    /**
+     * A reference to another object by its id. A relationship Field has this type. It is not an IRI
+     * value ({@link #IRI_REF}).
+     */
+    OBJECT_REF,
+
     /** A geospatial value. */
     GEO,
 

@@ -144,8 +144,8 @@ class FieldPathTest {
     }
 
     @Test
-    void facetTypeHasFourteenConstants() {
-        assertThat(FieldType.values()).hasSize(14);
+    void facetTypeHasFifteenConstants() {
+        assertThat(FieldType.values()).hasSize(15);
         assertThat(FieldType.values()).contains(FieldType.UNKNOWN);
     }
 

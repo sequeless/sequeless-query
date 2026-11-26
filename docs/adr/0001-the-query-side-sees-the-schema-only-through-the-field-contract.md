@@ -20,6 +20,7 @@ Deviations from a pure rename, recorded because the Field contract has no releas
 - The stamp sorts versions numerically, not as strings, so `10` sorts after `9`. The stamp format therefore differs from the ontology's.
 - `PathSegment` and `Relationship` carry the property IRI (`iri`), because the JSONB store keys properties by IRI and a UUID would need a second lookup that could go stale (Navigator decision Q13).
 - `FieldScope.concreteTypes` (Navigator decision Q15) holds the root and its concrete subtypes, filled by query-schema-adapter, and is part of the stamp, so a subtype change invalidates a cached scope.
+- `FieldType.OBJECT_REF` (Navigator decision Q18) is added before 0.1.0: a relationship Field's value is an object id, not an IRI, so it is not `IRI_REF`. The postgres adapter casts it to uuid by this type.
 
 ## Consequences
 
