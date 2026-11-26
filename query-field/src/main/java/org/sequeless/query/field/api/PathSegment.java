@@ -6,9 +6,8 @@ import java.util.UUID;
 /**
  * One hop of a {@link FieldPath}: the property walked, and the class it lands on.
  *
- * <p>Like {@link ClassRef}, the property is identified durably by {@link #propertyId()} with
- * {@link #slug()} carried only for presentation. See field-contract.md section 2.1. {@link #iri()} is
- * the key component the Query side builds its FieldRegistry key from, so it is
+ * <p>Like {@link ClassRef}, the property is identified durably by {@link #propertyId()} with {@link #slug()} carried
+ * only for presentation. {@link #iri()} is the key component the Query side builds its FieldRegistry key from, so it is
  * not presentation-only.
  *
  * @param propertyId the durable identity of the property walked at this hop; never {@code null}

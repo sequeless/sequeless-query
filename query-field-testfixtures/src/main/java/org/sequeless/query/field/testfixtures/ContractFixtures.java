@@ -14,9 +14,8 @@ import org.sequeless.query.field.api.OntologyVersionRef;
 import org.sequeless.query.field.api.OperatorRestriction;
 
 /**
- * Nine canned {@link ContractFixture} scenarios, each exercising one facet of field-contract.md's
- * semantics: version merge (§4.4), merge conflicts (§4.5), the traversal guards (§4.3), and RBAC
- * facet filtering (§4.10).
+ * Nine canned {@link ContractFixture} scenarios, each exercising one facet of the contract's semantics: version merge
+ * (§4.4), merge conflicts (§4.5), the traversal guards (§4.3), and RBAC facet filtering (§4.10).
  *
  * <p>Every scenario belongs to tenant {@code "acme"}. Ontology versions are {@code 1} and {@code 2},
  * and (reserved for scenarios needing a third version) {@code 3}. Every identity below — every distinct property, relationship, and class across
@@ -403,9 +402,8 @@ public final class ContractFixtures {
     }
 
     /**
-     * Invoice (root), Customer, v1 only. The {@code customer} relationship exists but is marked
-     * unwalkable — exercising traversal guard 1, {@code EDGE_NOT_WALKABLE} (field-contract.md section
-     * 4.3).
+     * Invoice (root), Customer, v1 only. The {@code customer} relationship exists but is marked unwalkable — exercising
+     * traversal guard 1, {@code EDGE_NOT_WALKABLE}.
      *
      * @return the {@code unwalkableEdge} scenario
      */
@@ -438,9 +436,8 @@ public final class ContractFixtures {
     }
 
     /**
-     * A (root), B, C, v1 only, all relationships walkable: {@code A.toB}, {@code A.toC}, {@code
-     * B.toA} (closing the cycle back to root), and {@code C.toB}. Exercises traversal guard 2,
-     * {@code CYCLE_DETECTED} (field-contract.md section 4.3).
+     * A (root), B, C, v1 only, all relationships walkable: {@code A.toB}, {@code A.toC}, {@code B.toA} (closing the
+     * cycle back to root), and {@code C.toB}. Exercises traversal guard 2, {@code CYCLE_DETECTED}.
      *
      * @return the {@code cyclic} scenario
      */
@@ -480,9 +477,8 @@ public final class ContractFixtures {
     }
 
     /**
-     * Level0 (root) through Level5, six classes chained by a walkable {@code step} relationship,
-     * v1 only. Exercises traversal guard 3, {@code DEPTH_EXCEEDED} (field-contract.md section 4.3),
-     * against the default max depth of 3.
+     * Level0 (root) through Level5, six classes chained by a walkable {@code step} relationship, v1 only. Exercises
+     * traversal guard 3, {@code DEPTH_EXCEEDED}, against the default max depth of 3.
      *
      * @return the {@code deep} scenario
      */
@@ -520,8 +516,8 @@ public final class ContractFixtures {
     }
 
     /**
-     * Invoice (root, readable by every role) and Customer (readable only by {@code "finance"}),
-     * v1 only. Exercises RBAC facet filtering (field-contract.md section 4.10).
+     * Invoice (root, readable by every role) and Customer (readable only by {@code "finance"}), v1 only. Exercises RBAC
+     * facet filtering.
      *
      * @return the {@code rbacRestricted} scenario
      */

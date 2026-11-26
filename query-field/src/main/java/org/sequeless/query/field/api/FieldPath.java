@@ -7,12 +7,10 @@ import java.util.stream.Collectors;
 /**
  * A dot-walked path from a root class, expressed as an ordered list of {@link PathSegment}s.
  *
- * <p><b>Slug in text, UUID on the wire.</b> A user types {@code customer.city}. Per field-contract.md
- * section 2.1, the parsed and persisted form of that path is the list of property UUIDs returned
- * by {@link #asIdPath()} — never the slugs. Rendering the path back to text with
- * {@link #asSlugPath()} uses whatever slug is <em>current</em> on each segment, so a saved search
- * written before a property rename still displays correctly after it: the identity survived the
- * rename even though the text did not.
+ * <p><b>Slug in text, UUID on the wire.</b> A user types {@code customer.city}. The parsed and persisted form of that
+ * path is the list of property UUIDs returned by {@link #asIdPath()} — never the slugs. Rendering the path back to text
+ * with {@link #asSlugPath()} uses whatever slug is <em>current</em> on each segment, so a saved search written before a
+ * property rename still displays correctly after it: the identity survived the rename even though the text did not.
  *
  * @param segments the ordered hops of the path, root-first; never empty, and every non-terminal
  *     segment (every segment but the last) must carry a non-null {@link PathSegment#targetClass()}
@@ -50,9 +48,8 @@ public record FieldPath(List<PathSegment> segments) {
     }
 
     /**
-     * Renders this path as the ordered list of property UUIDs. This is the durable form used for
-     * persistence — a saved search stores this, not {@link #asSlugPath()}, precisely so that a
-     * later rename does not break it. See field-contract.md section 2.1.
+     * Renders this path as the ordered list of property UUIDs. This is the durable form used for persistence — a saved
+     * search stores this, not {@link #asSlugPath()}, precisely so that a later rename does not break it.
      *
      * @return the property UUIDs of every segment, in order
      */

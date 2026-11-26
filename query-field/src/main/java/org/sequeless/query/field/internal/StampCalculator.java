@@ -16,7 +16,7 @@ import org.sequeless.query.field.api.TraversalConfig;
 import org.sequeless.query.field.api.VersionPolicy;
 
 /**
- * Computes {@link FieldScope#stamp()} per field-contract.md section 4.9.
+ * Computes {@link FieldScope#stamp()}.
  *
  * <p>The {@link FieldScopeRequest} passed to {@link #stamp(FieldScopeRequest, Set, Set)} never carries
  * the resolved ontology versions or the concrete types itself — which of them actually contributed
@@ -55,13 +55,12 @@ public final class StampCalculator {
      * and the concrete types' IRIs sorted and joined with {@code ","}. An empty {@code
      * concreteTypes} adds nothing, so the stamp for an empty set is exactly the version part.
      *
-     * <p>Per field-contract.md section 4.9, this mode is correct exactly as long as nothing besides the
-     * version set and the concrete types varies between two resolutions that should compare equal
-     * — it is deliberately cheap, not deliberately complete; full injectivity over every input that
-     * could affect the scope is what {@link #contentHash(FieldScopeRequest, Set, Set)} is for. The
-     * version part never contains {@code "|"}, so the first {@code "|"} always starts the labelled
-     * field. An IRI that contains {@code ","} would still make the concrete-type list ambiguous
-     * here, which is one reason this mode is cheap rather than complete.
+     * <p>This mode is correct exactly as long as nothing besides the version set and the concrete types varies between
+     * two resolutions that should compare equal — it is deliberately cheap, not deliberately complete; full injectivity
+     * over every input that could affect the scope is what {@link #contentHash(FieldScopeRequest, Set, Set)} is for.
+     * The version part never contains {@code "|"}, so the first {@code "|"} always starts the labelled field. An IRI
+     * that contains {@code ","} would still make the concrete-type list ambiguous here, which is one reason this mode
+     * is cheap rather than complete.
      *
      * <p><b>Edge case.</b> When {@code versions} is empty, {@code String.join} would yield {@code
      * ""}, but {@link FieldScope}'s compact constructor rejects a blank stamp. This method returns
@@ -114,7 +113,7 @@ public final class StampCalculator {
      * part of a field's content — a tenant literally named {@code "a;b"} cannot collide with a
      * different input that happens to produce the same characters around a chosen separator.
      *
-     * <p>Field order, matching the table in field-contract.md section 4.9:
+     * <p>Field order:
      *
      * <ol>
      *   <li>the literal discriminator {@code "CONTENT_HASH"} — this is what makes the hash differ

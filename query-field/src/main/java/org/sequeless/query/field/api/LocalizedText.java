@@ -5,14 +5,14 @@ import java.util.Objects;
 /**
  * A single piece of human-facing text paired with the language it is written in.
  *
- * <p>Labels and descriptions throughout this contract ({@link ClassRef#label()}, a facet's label
- * and description, and so on) are {@code LocalizedText} rather than a bare {@code String} because
- * the ontology is not assumed to be authored in a single language. See field-contract.md section 2.4.
+ * <p>Labels and descriptions throughout this contract ({@link ClassRef#label()}, a facet's label and description, and
+ * so on) are {@code LocalizedText} rather than a bare {@code String} because the ontology is not assumed to be authored
+ * in a single language.
  *
  * @param value the text itself; never {@code null}
- * @param languageTag a BCP 47 language tag (for example {@code "en"} or {@code "fr-CA"}), or
- *     {@code null} when the text is not tagged to a particular language. field-contract.md section 2.4
- *     records this field as nullable, unlike every other reference field in this package.
+ * @param languageTag a BCP 47 language tag (for example {@code "en"} or {@code "fr-CA"}), or {@code null} when the text
+ *     is not tagged to a particular language. This field is nullable, unlike every other reference field in this
+ *     package.
  */
 public record LocalizedText(String value, String languageTag) {
 
@@ -23,6 +23,6 @@ public record LocalizedText(String value, String languageTag) {
      */
     public LocalizedText {
         Objects.requireNonNull(value, "value must not be null");
-        // languageTag may be null: field-contract.md section 2.4
+        // languageTag may be null
     }
 }

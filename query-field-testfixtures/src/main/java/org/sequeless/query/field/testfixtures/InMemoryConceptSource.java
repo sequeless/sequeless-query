@@ -17,12 +17,11 @@ import org.sequeless.query.field.spi.ConceptSource;
  * An in-memory {@code ConceptSource} backed directly by a caller-supplied map of scheme id to its
  * concepts.
  *
- * <p>Unlike {@link InMemoryFieldSource}, this class deliberately does <em>not</em> build on {@link
- * ContractFixture}. Per {@link ConceptSource}'s own Javadoc (field-contract.md section 4.7 and section
- * 3.2), a concept scheme is shared vocabulary published on its own clock, not tenant-owned schema —
- * it carries no tenant id and nothing in its data model relates it to a {@link ContractFixture}
- * scenario. Giving it its own minimal, self-contained storage keeps that independence honest rather
- * than borrowing a fixture shape built for a different port.
+ * <p>Unlike {@link InMemoryFieldSource}, this class deliberately does <em>not</em> build on {@link ContractFixture}.
+ * Per {@link ConceptSource}'s own Javadoc, a concept scheme is shared vocabulary published on its own clock, not
+ * tenant-owned schema — it carries no tenant id and nothing in its data model relates it to a {@link ContractFixture}
+ * scenario. Giving it its own minimal, self-contained storage keeps that independence honest rather than borrowing a
+ * fixture shape built for a different port.
  */
 public final class InMemoryConceptSource implements ConceptSource {
 

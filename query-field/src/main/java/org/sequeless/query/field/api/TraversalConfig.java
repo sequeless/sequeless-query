@@ -7,35 +7,32 @@ import java.util.OptionalInt;
  * How far and how a {@code FieldScopeRequest} is allowed to traverse from its root class, and how
  * the resulting scope's freshness is stamped.
  *
- * <p>Per field-contract.md section 4.3, unbounded traversal is supported but never free by default: this
- * type bundles the three traversal guards (edge opt-in is enforced elsewhere, by the ontology
- * marking relationships walkable; {@link #noRevisitClasses()} and {@link #maxDepth()} are
- * configured here) plus the two settings that determine how a resolved scope may be cached and by
+ * <p>Unbounded traversal is supported but never free by default: this type bundles the three traversal guards (edge
+ * opt-in is enforced elsewhere, by the ontology marking relationships walkable; {@link #noRevisitClasses()} and {@link
+ * #maxDepth()} are configured here) plus the two settings that determine how a resolved scope may be cached and by
  * whom.
  *
  * @param maxDepth the maximum number of hops from the root a resolution may traverse; {@link
  *     OptionalInt#empty()} means unbounded. Unbounded is a deliberate opt-in and not the default,
- *     because the three guards in field-contract.md section 4.3 make deep traversal <b>safe, not
+ *     because the three traversal guards make deep traversal <b>safe, not
  *     cheap</b> — a wide, deeply connected graph can still enumerate a very large number of
  *     relationships even with cycles and unmarked edges excluded. {@link #defaults()} therefore
  *     uses a finite depth of 3.
- * @param noRevisitClasses whether a single path may re-enter a class already on that same path.
- *     This is traversal guard 2 (field-contract.md section 4.3) and it is <b>per-path, not global</b>: it
- *     kills {@code Invoice -> customer -> invoices -> customer -> ...} within one path without
- *     forbidding a class from legitimately appearing in two different paths, such as {@code
- *     Invoice -> customer} and {@code Invoice -> lineItems -> invoice} both reaching {@code
- *     Invoice} independently. Default {@code true}.
+ * @param noRevisitClasses whether a single path may re-enter a class already on that same path. This is traversal guard
+ *     2 and it is <b>per-path, not global</b>: it kills {@code Invoice -> customer -> invoices -> customer -> ...}
+ *     within one path without forbidding a class from legitimately appearing in two different paths, such as {@code
+ *     Invoice -> customer} and {@code Invoice -> lineItems -> invoice} both reaching {@code Invoice} independently.
+ *     Default {@code true}.
  * @param stampMode how the resolved scope's {@link FieldScope#stamp()} is composed; never {@code
  *     null}. Default {@link StampMode#VERSION_ONLY}.
- * @param rbacFiltersFacets whether resolution should omit facets and relationships the requesting
- *     {@link org.sequeless.kernel.identity.Principal} cannot read, per field-contract.md section 4.10. Default {@code false}, so that the
- *     cache key stays free of the principal — one facet list per ontology version, rather than one
- *     per role, which is a large win when the schema itself is not sensitive and only row-level
- *     data needs an RBAC predicate. <b>Caution</b> (field-contract.md section 4.9): turning this on while
- *     {@link #stampMode()} remains {@link StampMode#VERSION_ONLY} lets a cache keyed on the stamp
- *     serve one principal's filtered facet list to another, since the stamp does not vary with the
- *     principal in that mode. Enabling {@code rbacFiltersFacets} should force {@link
- *     StampMode#CONTENT_HASH}, or the cache must key on the request rather than on the stamp alone.
+ * @param rbacFiltersFacets whether resolution should omit facets and relationships the requesting {@link
+ *     org.sequeless.kernel.identity.Principal} cannot read. Default {@code false}, so that the cache key stays free of
+ *     the principal — one facet list per ontology version, rather than one per role, which is a large win when the
+ *     schema itself is not sensitive and only row-level data needs an RBAC predicate. <b>Caution</b>: turning this on
+ *     while {@link #stampMode()} remains {@link StampMode#VERSION_ONLY} lets a cache keyed on the stamp serve one
+ *     principal's filtered facet list to another, since the stamp does not vary with the principal in that mode.
+ *     Enabling {@code rbacFiltersFacets} should force {@link StampMode#CONTENT_HASH}, or the cache must key on the
+ *     request rather than on the stamp alone.
  */
 public record TraversalConfig(
         OptionalInt maxDepth, boolean noRevisitClasses, StampMode stampMode, boolean rbacFiltersFacets) {

@@ -22,9 +22,9 @@ import org.sequeless.query.field.api.OperatorRestriction;
  * {@code List<PropertyFixture>} therefore converts straight into {@code FieldMerger.merge}'s input
  * with no reshaping: one fixture row becomes one per-version {@code Field}.
  *
- * <p>Two rows sharing the same {@link #id()} but a different {@link #slug()}, {@link #type()}, or
- * {@link #definedInVersion()} is exactly how a fixture expresses a slug rename or a cross-version
- * type conflict — the merge then reconciles them by identity, per field-contract.md sections 4.4 and 4.5.
+ * <p>Two rows sharing the same {@link #id()} but a different {@link #slug()}, {@link #type()}, or {@link
+ * #definedInVersion()} is exactly how a fixture expresses a slug rename or a cross-version type conflict — the merge
+ * then reconciles them by identity.
  *
  * @param id the durable identity of this property; never {@code null}
  * @param iri the property's IRI, stable across a slug rename; never {@code null} or blank, and never containing '|'

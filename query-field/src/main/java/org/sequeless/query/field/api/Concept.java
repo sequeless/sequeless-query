@@ -8,10 +8,9 @@ import java.util.Optional;
  * One value drawn from a concept scheme — the thing a {@code CONCEPT_REF}-typed {@link Field}
  * filters against.
  *
- * <p>Concepts live behind their own port ({@code ConceptSource}) rather than inside {@link Field},
- * because concept schemes are published on their own clock (field-contract.md section 4.7). Bundling
- * concept values into a facet response would mean caching a taxonomy snapshot inside that response
- * and serving it stale.
+ * <p>Concepts live behind their own port ({@code ConceptSource}) rather than inside {@link Field}, because concept
+ * schemes are published on their own clock. Bundling concept values into a facet response would mean caching a taxonomy
+ * snapshot inside that response and serving it stale.
  *
  * <p>{@link #hasNarrower()} exists so a tree picker can render an expand arrow <em>without a second
  * round trip</em>. Without it, every node in a rendered tree would need its own follow-up query

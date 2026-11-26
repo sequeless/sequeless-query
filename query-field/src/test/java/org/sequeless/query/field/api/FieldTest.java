@@ -139,8 +139,8 @@ class FieldTest {
 
     @Test
     void capabilitiesAreFourIndependentBooleans() {
-        // 'total' from the field-contract.md section 2.3 worked example: filterable and sortable, but not
-        // facetable — every value is distinct, so bucketing produces noise rather than a picker.
+        // 'total' from the worked example: filterable and sortable, but not facetable — every value is distinct, so
+        // bucketing produces noise rather than a picker.
         Capabilities total = new Capabilities(true, false, false, true);
 
         assertThat(total.filterable()).isTrue();

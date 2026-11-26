@@ -24,7 +24,7 @@ import org.sequeless.query.field.api.OntologyVersionRef;
  * @param targetClassSlug the slug of the class this relationship points to; never {@code null} or
  *     blank
  * @param cardinality this relationship's cardinality; never {@code null}
- * @param walkable whether this relationship is marked walkable, per field-contract.md section 2.5
+ * @param walkable whether this relationship is marked walkable
  * @param definedInVersions every ontology version this relationship is defined in; never
  *     {@code null}, defensively copied, never empty
  */

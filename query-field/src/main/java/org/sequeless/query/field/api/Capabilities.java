@@ -4,13 +4,12 @@ package org.sequeless.query.field.api;
  * Four independent signals about what may be done with a facet's values: filtered, faceted (i.e.
  * bucketed and counted), searched, and sorted.
  *
- * <p>Per field-contract.md section 2.3, these are four <b>independent</b> booleans, not a hierarchy — none
- * of them implies another. In particular, {@link #filterable()} does not imply {@link
- * #facetable()}: a property can be perfectly safe to filter on while being a terrible candidate
- * for a checkbox-with-counts UI, because faceting only makes sense when the value's cardinality is
+ * <p>These are four <b>independent</b> booleans, not a hierarchy — none of them implies another. In particular, {@link
+ * #filterable()} does not imply {@link #facetable()}: a property can be perfectly safe to filter on while being a
+ * terrible candidate for a checkbox-with-counts UI, because faceting only makes sense when the value's cardinality is
  * low enough that the resulting bucket list is useful rather than noise.
  *
- * <p>Worked example from field-contract.md section 2.3, an {@code Invoice} class:
+ * <p>Worked example, an {@code Invoice} class:
  *
  * <table>
  *   <caption>Invoice capability worked example</caption>

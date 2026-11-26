@@ -3,9 +3,8 @@ package org.sequeless.query.field.api;
 /**
  * The closed set of value shapes a facet may hold.
  *
- * <p>Per field-contract.md section 2.2, this is a contract-owned enum rather than XSD datatype IRIs or a
- * JSON Schema {@code type}/{@code format} pair, for reasons that matter to both sides of the
- * contract:
+ * <p>This is a contract-owned enum rather than XSD datatype IRIs or a JSON Schema {@code type}/{@code format} pair, for
+ * reasons that matter to both sides of the contract:
  *
  * <ul>
  *   <li><b>Not XSD IRIs.</b> Using raw XSD IRIs would force {@code sequeless-filter}'s operator
@@ -73,7 +72,7 @@ public enum FieldType {
      * The required escape hatch. An ontology may legitimately use a custom datatype this enum has
      * never heard of; such facets are still listed by {@code FieldSource} and still carry their
      * {@code nativeDatatypeIri} — they simply derive a minimal operator set ({@code exists} /
-     * {@code does not exist}; field-contract.md section 5) because nothing more specific can be assumed
+     * {@code does not exist}) because nothing more specific can be assumed
      * about them.
      */
     UNKNOWN

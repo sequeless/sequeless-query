@@ -6,17 +6,15 @@ import java.util.Objects;
  * How a {@code FieldScopeRequest} reconciles multiple ontology versions in scope into one set of
  * facets.
  *
- * <p>Per field-contract.md section 4.4, records are stamped {@code dcterms:conformsTo <versionIRI>} and
- * never auto-upgrade, so a scope routinely spans versions — some records in scope were written
- * under v1, some under v2, and both are queried together. Deciding how to reconcile that is
- * therefore a <b>request parameter, not a deployment setting</b>: the same tenant and root class
- * may be resolved once under {@link Union} to build a filter UI that covers every record, and again
- * under {@link Pinned} to re-validate a saved search exactly as it was written.
+ * <p>Records are stamped {@code dcterms:conformsTo <versionIRI>} and never auto-upgrade, so a scope routinely spans
+ * versions — some records in scope were written under v1, some under v2, and both are queried together. Deciding how to
+ * reconcile that is therefore a <b>request parameter, not a deployment setting</b>: the same tenant and root class may
+ * be resolved once under {@link Union} to build a filter UI that covers every record, and again under {@link Pinned} to
+ * re-validate a saved search exactly as it was written.
  *
- * <p>Worked example used throughout the variant Javadoc below (field-contract.md section 4.4): an {@code
- * Invoice} class exists in v1 and v2. Between them, the property {@code custName} was renamed to
- * {@code customerName} — same property UUID, new slug — and v2 additionally introduced a new
- * property, {@code region}.
+ * <p>Worked example used throughout the variant Javadoc below: an {@code Invoice} class exists in v1 and v2. Between
+ * them, the property {@code custName} was renamed to {@code customerName} — same property UUID, new slug — and v2
+ * additionally introduced a new property, {@code region}.
  *
  * <p>This is a sealed interface rather than an enum because {@link Pinned} carries data (the
  * version to pin to) that the other two variants do not need.

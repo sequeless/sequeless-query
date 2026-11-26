@@ -9,17 +9,15 @@ import java.util.Set;
  * it, and everything a consumer such as {@code sequeless-filter} needs in order to build a filter
  * UI and validate expressions without knowing anything else about the ontology.
  *
- * <p>Per field-contract.md section 2.4, this is the central model type of the facet contract — the thing
- * a {@code FieldScopeRequest} resolves to, one entry per property.
+ * <p>This is the central model type of the facet contract — the thing a {@code FieldScopeRequest} resolves to, one
+ * entry per property.
  *
- * <p><b>{@code Optional} record components.</b> {@link #conceptScheme()} and {@link #conflict()}
- * are typed as {@code Optional} rather than nullable, because field-contract.md section 2.4 specifies them
- * that way literally, and field-contract.md wins over the general convention against {@code Optional} as a
- * field type. That convention exists to protect mutable beans and serialization frameworks, and
- * neither applies here: this contract's types are immutable records, and wire serialization is
- * explicitly out of scope (field-contract.md section 6). Record {@code equals}/{@code hashCode} work
- * correctly with {@code Optional} components regardless, because {@code Optional} is itself
- * value-based.
+ * <p><b>{@code Optional} record components.</b> {@link #conceptScheme()} and {@link #conflict()} are typed as {@code
+ * Optional} rather than nullable, because the contract specifies them that way literally, and the contract wins over
+ * the general convention against {@code Optional} as a field type. That convention exists to protect mutable beans and
+ * serialization frameworks, and neither applies here: this contract's types are immutable records, and wire
+ * serialization is explicitly out of scope. Record {@code equals}/{@code hashCode} work correctly with {@code Optional}
+ * components regardless, because {@code Optional} is itself value-based.
  *
  * @param path the location of this facet, relative to whatever root the request resolved against;
  *     never {@code null}

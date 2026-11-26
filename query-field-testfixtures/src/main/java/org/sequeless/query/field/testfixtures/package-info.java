@@ -16,7 +16,7 @@
  *       proven correct.
  *   <li><b>A reusable contract test kit</b> — abstract JUnit test classes that any {@code
  *       FieldSource}/{@code ConceptSource} implementation, including an RDF-backed one added
- *       later, extends and points at its own instance to verify it upholds field-contract.md's semantics
+ *       later, extends and points at its own instance to verify it upholds the contract's semantics
  *       (traversal guards, version policies, merge conflicts, and so on) rather than merely
  *       compiling against the contract's types.
  * </ul>

@@ -6,11 +6,10 @@ import java.util.Optional;
 /**
  * Thrown when a facet scope, expansion, or path description cannot be resolved.
  *
- * <p>Per field-contract.md section 2.7, resolution never returns a partial or silently-narrowed answer: it
- * either succeeds or throws. Returning a shortened facet list on failure would leave the caller
- * unable to tell "this class genuinely has three filterable properties" apart from "something went
- * wrong and you are seeing three of thirty", and a filter builder rendered from the latter is
- * worse than an error message.
+ * <p>Resolution never returns a partial or silently-narrowed answer: it either succeeds or throws. Returning a
+ * shortened facet list on failure would leave the caller unable to tell "this class genuinely has three filterable
+ * properties" apart from "something went wrong and you are seeing three of thirty", and a filter builder rendered from
+ * the latter is worse than an error message.
  *
  * <p>The failure therefore carries a {@link FieldErrorCode} the caller can branch on and localize,
  * rather than only a message string. It also carries the {@link FieldPath} and {@link ClassRef}

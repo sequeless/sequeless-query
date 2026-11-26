@@ -7,10 +7,9 @@ import java.util.Objects;
  * The record of a merge conflict on a single facet: the incompatible per-version definitions, and
  * why they conflict.
  *
- * <p>Per field-contract.md section 4.5, when the versions in scope disagree on a property's {@link
- * FieldType} or {@link Cardinality}, the facet is <b>kept and marked</b> with a {@code
- * FieldConflict} — it is never dropped and the resolution never fails outright. The rejected
- * alternatives are both worse:
+ * <p>When the versions in scope disagree on a property's {@link FieldType} or {@link Cardinality}, the facet is <b>kept
+ * and marked</b> with a {@code FieldConflict} — it is never dropped and the resolution never fails outright. The
+ * rejected alternatives are both worse:
  *
  * <ul>
  *   <li><b>Failing the whole resolution</b> would let one bad property change across versions
@@ -20,12 +19,11 @@ import java.util.Objects;
  *       nothing, and the caller has no way to know that happened.
  * </ul>
  *
- * <p>Instead, a conflicted {@link Field} is returned with a widest-common {@link Field#type()} and
- * this {@code FieldConflict} attached, and the query still runs and still returns records from
- * every version. Consumers are expected to offer only operators valid for <b>every</b> conflicting
- * definition — for the {@code issuedAt} example in field-contract.md section 4.5 ({@code STRING} in v1,
- * {@code DATETIME} in v2), that is {@code is}, {@code is not}, {@code is in}, {@code exists}, and
- * {@code does not exist}, but not {@code >} or {@code between}.
+ * <p>Instead, a conflicted {@link Field} is returned with a widest-common {@link Field#type()} and this {@code
+ * FieldConflict} attached, and the query still runs and still returns records from every version. Consumers are
+ * expected to offer only operators valid for <b>every</b> conflicting definition — for an {@code issuedAt} example
+ * ({@code STRING} in v1, {@code DATETIME} in v2), that is {@code is}, {@code is not}, {@code is in}, {@code exists},
+ * and {@code does not exist}, but not {@code >} or {@code between}.
  *
  * @param definitions every conflicting per-version definition of the facet; never {@code null},
  *     never empty, and never containing {@code null} elements — a conflict is meaningless without

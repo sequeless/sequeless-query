@@ -25,7 +25,7 @@ public record ConceptQuery(String partialText, Optional<String> parentIri, Optio
 
     /** Validates the {@link Optional} wrappers. */
     public ConceptQuery {
-        // partialText may be null: field-contract.md section 3.2 — it means "no text filter"
+        // partialText may be null — it means "no text filter"
         Objects.requireNonNull(parentIri, "parentIri must not be null (use Optional.empty())");
         Objects.requireNonNull(locale, "locale must not be null (use Optional.empty())");
     }

@@ -8,11 +8,10 @@ import java.util.Set;
  * The result of resolving a {@link FieldScopeRequest}: the root's own facets, the relationships
  * walkable from the current frontier, and enough bookkeeping to re-expand or cache the scope.
  *
- * <p>Per field-contract.md section 2.6 and section 4.2, {@code facets} is populated <b>eagerly at depth 1
- * and lazily beyond</b> — {@code resolve} returns the root's own facets fully populated, plus the
- * walkable relationships, which is enough to render a complete filter builder for the common case
- * with one call. Going deeper means calling {@code FieldSource.expand} with one of {@link
- * #relationships()} to obtain a further {@code FieldScope}.
+ * <p>{@code facets} is populated <b>eagerly at depth 1 and lazily beyond</b> — {@code resolve} returns the root's own
+ * facets fully populated, plus the walkable relationships, which is enough to render a complete filter builder for the
+ * common case with one call. Going deeper means calling {@code FieldSource.expand} with one of {@link #relationships()}
+ * to obtain a further {@code FieldScope}.
  *
  * <p>This is not an optimization; it is forced. Under unbounded traversal, a flat list of every
  * legal path is infinite the moment a cycle exists, and even in an acyclic graph the list is
@@ -26,12 +25,10 @@ import java.util.Set;
  *     may be empty
  * @param relationships the walkable edges from the current frontier — following one via {@code
  *     FieldSource.expand} extends this scope one hop further; never {@code null}, may be empty
- * @param stamp this scope's freshness stamp, composed as described by {@link
- *     TraversalConfig#stampMode()}; never {@code null} or blank. Per field-contract.md section 4.9, this
- *     field is <b>always present</b>, and only its composition varies with the stamp mode. If it
- *     were absent under the cheap mode, tightening a deployment to {@code CONTENT_HASH} stamps
- *     later would be a breaking change, and saved searches written in the meantime would have
- *     nothing recorded to compare against.
+ * @param stamp this scope's freshness stamp, composed as described by {@link TraversalConfig#stampMode()}; never {@code
+ *     null} or blank. This field is <b>always present</b>, and only its composition varies with the stamp mode. If it
+ *     were absent under the cheap mode, tightening a deployment to {@code CONTENT_HASH} stamps later would be a
+ *     breaking change, and saved searches written in the meantime would have nothing recorded to compare against.
  * @param ontologyVersions the ontology versions that contributed to this scope; never {@code
  *     null}, may be empty only if no version-defined content is in scope
  * @param concreteTypes the root class and its concrete subtypes, the classes a Browse may match;

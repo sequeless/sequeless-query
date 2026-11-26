@@ -6,9 +6,8 @@ import java.util.UUID;
 import org.sequeless.query.field.api.FieldPath;
 
 /**
- * Converts {@link FieldPath} to and from the two textual forms field-contract.md section 2.1 describes:
- * the UUID form used on the wire and for persistence, and the slug form typed and displayed by a
- * human.
+ * Converts {@link FieldPath} to and from its two textual forms: the UUID form used on the wire and for
+ * persistence, and the slug form typed and displayed by a human.
  *
  * <p><b>Slug in text, UUID on the wire — and that asymmetry is the whole point of this class.</b>
  * {@link #parseIds(String)} undoing {@link #formatIds(FieldPath)} is a faithful round trip:

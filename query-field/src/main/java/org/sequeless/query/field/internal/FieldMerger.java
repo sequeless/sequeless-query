@@ -28,10 +28,9 @@ import org.sequeless.query.field.api.OperatorRestriction;
 import org.sequeless.query.field.api.VersionPolicy;
 
 /**
- * Reconciles one {@link Field} definition per ontology version into the single list a {@code
- * FieldScopeRequest} resolves to, per field-contract.md section 4.4 (which policy to apply) and section
- * 4.5 (how a per-field disagreement between versions is resolved once a policy decides two
- * definitions belong to the same facet).
+ * Reconciles one {@link Field} definition per ontology version into the single list a {@code FieldScopeRequest}
+ * resolves to: the version policy decides which definitions apply, and a per-field disagreement between versions is
+ * resolved once a policy decides two definitions belong to the same facet.
  *
  * <p><b>Grouping key.</b> Definitions are grouped by {@link Field#path()}{@code
  * .asIdPath()} — the ordered list of property {@link UUID}s — never by {@link
@@ -103,10 +102,9 @@ public final class FieldMerger {
             case VersionPolicy.Intersection ignored -> mergeIntersection(groups, perVersionDefinitions, versionOrder);
         };
 
-        // A FieldSource can return this list as-is and get a stable, human-readable order for
-        // free, which is the point of putting this logic in the contract rather than duplicating
-        // it in each FieldSource implementation. See field-contract.md section 4.5's worked example, which
-        // presents merged facets in this order.
+        // A FieldSource can return this list as-is and get a stable, human-readable order for free, which is the point
+        // of putting this logic in the contract rather than duplicating it in each FieldSource implementation. Merged
+        // facets are presented in this order.
         return merged.stream()
                 .sorted(Comparator.comparing(facet -> facet.path().asSlugPath()))
                 .toList();
@@ -307,10 +305,9 @@ public final class FieldMerger {
      * first-occurrence order walking members oldest to newest (never {@code HashSet} iteration
      * order, which is not deterministic across runs).
      *
-     * <p>A restriction may only narrow the operator set, never widen it (field-contract.md section 2.4), so
-     * a version-specific {@code denied} entry must survive into the merged facet even if only one
-     * version asserted it — dropping it would let the merged facet offer an operator the ontology
-     * explicitly forbade under one of its contributing versions.
+     * <p>A restriction may only narrow the operator set, never widen it, so a version-specific {@code denied} entry
+     * must survive into the merged facet even if only one version asserted it — dropping it would let the merged facet
+     * offer an operator the ontology explicitly forbade under one of its contributing versions.
      *
      * <p>The subtle case is {@code allowed}: {@link OperatorRestriction}'s own contract defines both
      * lists empty as "no opinion", not "zero operators permitted". A naive set intersection would
@@ -345,10 +342,9 @@ public final class FieldMerger {
     }
 
     /**
-     * {@code nativeDatatypeIri} is purely advisory — field-contract.md section 2.2 requires no consumer to
-     * understand it — so on disagreement it is dropped ({@code null}) rather than arbitrarily
-     * preferring one version's value over another's. All-{@code null} counts as agreement, matching
-     * {@link Field#nativeDatatypeIri()}'s own "may be {@code null}" contract.
+     * {@code nativeDatatypeIri} is purely advisory — no consumer is required to understand it — so on disagreement it
+     * is dropped ({@code null}) rather than arbitrarily preferring one version's value over another's. All-{@code null}
+     * counts as agreement, matching {@link Field#nativeDatatypeIri()}'s own "may be {@code null}" contract.
      */
     private static String resolveNativeDatatypeIri(List<Field> ordered) {
         String first = ordered.get(0).nativeDatatypeIri();
@@ -357,11 +353,10 @@ public final class FieldMerger {
     }
 
     /**
-     * Unlike {@code nativeDatatypeIri}, a facet's {@code conceptScheme} is behaviourally
-     * load-bearing — it gates subtree operators (field-contract.md section 4.7) — so on disagreement this
-     * prefers the newest contributing member's understanding rather than silently dropping it. When
-     * every member agrees, that shared value and the newest member's value are the same thing, so
-     * always reading it off {@code newest} is correct in both cases.
+     * Unlike {@code nativeDatatypeIri}, a facet's {@code conceptScheme} is behaviourally load-bearing — it gates
+     * subtree operators — so on disagreement this prefers the newest contributing member's understanding rather than
+     * silently dropping it. When every member agrees, that shared value and the newest member's value are the same
+     * thing, so always reading it off {@code newest} is correct in both cases.
      */
     private static Optional<ConceptSchemeRef> resolveConceptScheme(Field newest) {
         return newest.conceptScheme();
@@ -380,11 +375,10 @@ public final class FieldMerger {
     }
 
     /**
-     * Builds the {@link FieldConflict} attached to a conflicted merge. {@link
-     * FieldConflict#definitions()} lists <b>every</b> member of the group, not only the ones that
-     * differ, ordered oldest to newest — a consumer narrowing to conflict-safe operators (field-contract.md
-     * section 5) needs every definition to intersect against, and the reader needs the full picture
-     * of what each version actually said, not just the odd one out.
+     * Builds the {@link FieldConflict} attached to a conflicted merge. {@link FieldConflict#definitions()} lists
+     * <b>every</b> member of the group, not only the ones that differ, ordered oldest to newest — a consumer narrowing
+     * to conflict-safe operators needs every definition to intersect against, and the reader needs the full picture of
+     * what each version actually said, not just the odd one out.
      */
     private static FieldConflict buildConflict(List<Field> ordered, boolean typesAgree, boolean cardinalitiesAgree) {
         List<ConflictingDefinition> definitions = ordered.stream()

@@ -15,9 +15,8 @@ import org.sequeless.query.field.api.PathSegment;
 import org.sequeless.query.field.api.TraversalConfig;
 
 /**
- * Walks a {@link FieldPath} hop by hop over one Schema, applying the traversal guards of
- * {@code FieldSource} (field-contract.md section 4.3). Cycle detection is per path: the walk remembers
- * only the classes on its own route, starting from the root.
+ * Walks a {@link FieldPath} hop by hop over one Schema, applying the traversal guards of {@code FieldSource}. Cycle
+ * detection is per path: the walk remembers only the classes on its own route, starting from the root.
  *
  * <p>The walk does not decide which error a missing segment raises, because that depends on the
  * caller and the segment's position. The caller decides that, then calls {@link #enter} to move on.

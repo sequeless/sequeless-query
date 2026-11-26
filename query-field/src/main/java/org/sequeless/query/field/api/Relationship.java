@@ -8,11 +8,10 @@ import java.util.UUID;
  * A walkable edge from one class to another: a property whose value is a reference to an instance
  * of {@link #targetClass()} rather than a literal.
  *
- * <p>Per field-contract.md section 2.5, only relationships the ontology has marked <b>walkable</b> are
- * ever returned to a caller — an unmarked relationship is invisible to traversal. This is the
- * primary guard against path explosion (field-contract.md section 4.3): a class with hundreds of
- * reference-valued properties does not silently expand a caller's scope through every one of them,
- * only through the ones the ontology author has deliberately opened up.
+ * <p>Only relationships the ontology has marked <b>walkable</b> are ever returned to a caller — an unmarked
+ * relationship is invisible to traversal. This is the primary guard against path explosion: a class with hundreds of
+ * reference-valued properties does not silently expand a caller's scope through every one of them, only through the
+ * ones the ontology author has deliberately opened up.
  *
  * <p>Walkability is therefore not represented as a field on this type. There is no {@code
  * walkable} boolean to check, because an edge the ontology has not marked walkable simply never

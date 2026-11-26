@@ -12,27 +12,24 @@ import org.sequeless.query.field.api.FieldResolutionException;
  * The driven port a schema-backed adapter implements to serve values for {@code CONCEPT_REF}-typed
  * facets, either by search-as-you-type or by tree traversal.
  *
- * <p>This is a separate port from {@link FieldSource}, not a pair of extra methods bolted onto it,
- * because concept schemes are published on their own clock (field-contract.md section 4.7). A concept
- * scheme is a controlled vocabulary — a taxonomy of categories, say — that its owner can grow
- * independently of any ontology release: a new concept becomes filterable the moment the scheme
- * publishes it, no ontology deployment required. Bundling concept values into a {@link Field}
- * response would mean the facet source would have to cache a taxonomy snapshot alongside the
- * schema and serve it back on every resolution — stale the moment the scheme changes, and coupling
- * two things that change at different rates for no benefit.
+ * <p>This is a separate port from {@link FieldSource}, not a pair of extra methods bolted onto it, because concept
+ * schemes are published on their own clock. A concept scheme is a controlled vocabulary — a taxonomy of categories, say
+ * — that its owner can grow independently of any ontology release: a new concept becomes filterable the moment the
+ * scheme publishes it, no ontology deployment required. Bundling concept values into a {@link Field} response would
+ * mean the facet source would have to cache a taxonomy snapshot alongside the schema and serve it back on every
+ * resolution — stale the moment the scheme changes, and coupling two things that change at different rates for no
+ * benefit.
  *
- * <p>Unlike {@link FieldSource}, this port takes no {@code tenantId}. Per field-contract.md section 3.2
- * and section 4.7, concept schemes are named by a scheme id that is not scoped to a tenant —
- * concept schemes are shared vocabulary, not tenant-owned schema, so there is nothing to require
- * here that a caller could not already omit.
+ * <p>Unlike {@link FieldSource}, this port takes no {@code tenantId}. Concept schemes are named by a scheme id that is
+ * not scoped to a tenant — concept schemes are shared vocabulary, not tenant-owned schema, so there is nothing to
+ * require here that a caller could not already omit.
  */
 public interface ConceptSource {
 
     /**
      * List concepts in the scheme named by {@code schemeId} that match {@code query}.
      *
-     * <p>Per field-contract.md section 3.2, a concept picker operates in one of two modes, both served by
-     * this one method sharing one query type:
+     * <p>A concept picker operates in one of two modes, both served by this one method sharing one query type:
      *
      * <ul>
      *   <li><b>Search-as-you-type</b> — {@code query.parentIri()} is absent. Results are concepts
@@ -45,12 +42,11 @@ public interface ConceptSource {
      *       query.partialText()} may still narrow those children by label.
      * </ul>
      *
-     * <p>The returned list never exceeds {@code query.limit()} entries, since a scheme may hold
-     * hundreds of thousands of concepts and a picker always asks for a page rather than the whole
-     * taxonomy. Every returned {@link Concept} carries an accurate {@link Concept#hasNarrower()} —
-     * that is the promise that lets a tree picker draw an expand arrow next to a node without a
-     * second round trip just to discover whether it is a leaf (field-contract.md section 3.2). Ordering of
-     * the returned list is implementation-chosen.
+     * <p>The returned list never exceeds {@code query.limit()} entries, since a scheme may hold hundreds of thousands
+     * of concepts and a picker always asks for a page rather than the whole taxonomy. Every returned {@link Concept}
+     * carries an accurate {@link Concept#hasNarrower()} — that is the promise that lets a tree picker draw an expand
+     * arrow next to a node without a second round trip just to discover whether it is a leaf. Ordering of the returned
+     * list is implementation-chosen.
      *
      * @param schemeId the stable id of the concept scheme to search; never {@code null} or blank
      * @param query what to search for — free text, an optional parent to list children of, an
@@ -66,14 +62,12 @@ public interface ConceptSource {
     /**
      * Look up exactly one concept by its IRI within the scheme named by {@code schemeId}.
      *
-     * <p>An IRI not present in the scheme is reported as {@link Optional#empty()}, never as a
-     * thrown exception. Per field-contract.md section 4.7, a record can carry a filter value referencing a
-     * concept that has since been removed from its scheme; that record's data has not changed, and
-     * the value still filters correctly by IRI. This method simply cannot describe that concept
-     * anymore — it cannot supply a label or a {@code hasNarrower} answer for something the scheme
-     * no longer knows about — and an absent {@code Optional} is the correct, unexceptional way to
-     * say so. Throwing here would treat an entirely ordinary state of a live, independently-evolving
-     * vocabulary as an error.
+     * <p>An IRI not present in the scheme is reported as {@link Optional#empty()}, never as a thrown exception. A
+     * record can carry a filter value referencing a concept that has since been removed from its scheme; that record's
+     * data has not changed, and the value still filters correctly by IRI. This method simply cannot describe that
+     * concept anymore — it cannot supply a label or a {@code hasNarrower} answer for something the scheme no longer
+     * knows about — and an absent {@code Optional} is the correct, unexceptional way to say so. Throwing here would
+     * treat an entirely ordinary state of a live, independently-evolving vocabulary as an error.
      *
      * @param schemeId the stable id of the concept scheme to look in; never {@code null} or blank
      * @param conceptIri the IRI of the concept to look up; never {@code null} or blank

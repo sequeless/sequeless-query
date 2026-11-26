@@ -485,9 +485,8 @@ public abstract class FieldSourceContractTest {
      */
     @Test
     final void pinnedAbsentPathRaisesUnknownPath() {
-        // 'region' is defined only in v2 (see ContractFixtures.renamedAcrossVersions) -- this is
-        // field-contract.md section 4.4's own worked example: under Pinned(v1), region does not exist and
-        // typing it raises UNKNOWN_PATH.
+        // 'region' is defined only in v2 (see ContractFixtures.renamedAcrossVersions) -- this is the worked example:
+        // under Pinned(v1), region does not exist and typing it raises UNKNOWN_PATH.
         ContractFixture fixture = ContractFixtures.renamedAcrossVersions();
         FieldSource source = sourceFor(fixture);
         FieldScopeRequest request =

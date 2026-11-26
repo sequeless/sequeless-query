@@ -41,21 +41,18 @@ import org.sequeless.query.field.spi.FieldSource;
  * An in-memory {@code FieldSource} backed directly by a {@link ContractFixture}, with a fluent
  * {@link Builder} for assembling one inline.
  *
- * <p>This is the executable specification field-contract.md's contract test kit is proven against (see
- * {@code package-info}): every rule {@code FieldSource}'s Javadoc documents — the three traversal
- * guards of field-contract.md section 4.3, RBAC facet filtering of field-contract.md section 4.10, and version
- * reconciliation of field-contract.md section 4.4 — is implemented here from the raw {@link ClassFixture},
- * {@link PropertyFixture}, and {@link RelationshipFixture} rows, delegating only the parts already
- * owned elsewhere: version-policy reconciliation to {@link FieldMerger} and stamp composition to
- * {@link StampCalculator}. Guard 1 (edge opt-in), Guard 2 (cycle rejection), and Guard 3 (depth
- * capping) belong to neither of those and are implemented here, and only here.
+ * <p>This is the executable specification the contract test kit is proven against (see {@code package-info}): every
+ * rule {@code FieldSource}'s Javadoc documents — the three traversal guards, RBAC facet filtering, and version
+ * reconciliation — is implemented here from the raw {@link ClassFixture}, {@link PropertyFixture}, and {@link
+ * RelationshipFixture} rows, delegating only the parts already owned elsewhere: version-policy reconciliation to {@link
+ * FieldMerger} and stamp composition to {@link StampCalculator}. Guard 1 (edge opt-in), Guard 2 (cycle rejection), and
+ * Guard 3 (depth capping) belong to neither of those and are implemented here, and only here.
  *
- * <p>Java 21's exhaustive {@code switch} over {@link VersionPolicy}'s sealed permitted types
- * ({@link VersionPolicy.Union}, {@link VersionPolicy.Pinned}, {@link VersionPolicy.Intersection})
- * is used throughout this class wherever relationship-inclusion depends on the version policy —
- * the same pattern {@link FieldMerger} itself uses to reconcile facets — so that adding a fourth
- * variant to the sealed interface would fail this class's compilation rather than silently
- * miscategorizing it at runtime (field-contract.md section 4.4).
+ * <p>Java 21's exhaustive {@code switch} over {@link VersionPolicy}'s sealed permitted types ({@link
+ * VersionPolicy.Union}, {@link VersionPolicy.Pinned}, {@link VersionPolicy.Intersection}) is used throughout this class
+ * wherever relationship-inclusion depends on the version policy — the same pattern {@link FieldMerger} itself uses to
+ * reconcile facets — so that adding a fourth variant to the sealed interface would fail this class's compilation rather
+ * than silently miscategorizing it at runtime.
  */
 public final class InMemoryFieldSource implements FieldSource {
 
@@ -260,12 +257,11 @@ public final class InMemoryFieldSource implements FieldSource {
         }
         List<Field> merged = FieldMerger.merge(toFacets(matchingRows), request.versionPolicy(), fixture.versionOrder());
         if (merged.isEmpty()) {
-            // Reachable under VersionPolicy.Pinned: matchingRows share one property id, but that
-            // id's sole row may belong to a version other than the pinned one, in which case
-            // FieldMerger legitimately selects nothing for this group. That is exactly the
-            // region-under-Pinned(v1) case field-contract.md section 4.4's own worked example describes as
-            // "typing it raises UNKNOWN_PATH" -- the property genuinely does not exist under this
-            // pinned version, which is indistinguishable from it never having existed at all.
+            // Reachable under VersionPolicy.Pinned: matchingRows share one property id, but that id's sole row may
+            // belong to a version other than the pinned one, in which case FieldMerger legitimately selects nothing for
+            // this group. That is exactly the region-under-Pinned(v1) case the worked example describes as "typing it
+            // raises UNKNOWN_PATH" -- the property genuinely does not exist under this pinned version, which is
+            // indistinguishable from it never having existed at all.
             throw new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, path);
         }
         Field facet = merged.get(0); // exactly one group, and it survived the isEmpty() check above.
@@ -376,9 +372,8 @@ public final class InMemoryFieldSource implements FieldSource {
     }
 
     /**
-     * Whether {@code principal} may read {@code classFixture}, per field-contract.md section 4.10: readable
-     * by everyone when {@link ClassFixture#readableByRoles()} is empty, otherwise only when a
-     * present principal's roles intersect it.
+     * Whether {@code principal} may read {@code classFixture}: readable by everyone when {@link
+     * ClassFixture#readableByRoles()} is empty, otherwise only when a present principal's roles intersect it.
      */
     private static boolean canRead(ClassFixture classFixture, Optional<Principal> principal) {
         if (classFixture.readableByRoles().isEmpty()) {
@@ -421,10 +416,9 @@ public final class InMemoryFieldSource implements FieldSource {
     }
 
     /**
-     * Whether a relationship survives {@code policy}, mirroring {@link FieldMerger}'s own
-     * per-policy inclusion rules (field-contract.md section 4.4) even though relationships never go
-     * through {@link FieldMerger} itself (field-contract.md section 2.5 -- there is no relationship-merge
-     * logic anywhere in {@code query-field}, only select-or-include).
+     * Whether a relationship survives {@code policy}, mirroring {@link FieldMerger}'s own per-policy inclusion rules
+     * even though relationships never go through {@link FieldMerger} itself (there is no relationship-merge logic
+     * anywhere in {@code query-field}, only select-or-include).
      *
      * <p>{@code inScopeVersions} for {@link VersionPolicy.Intersection} is computed the same way
      * {@link FieldMerger}'s own {@code mergeIntersection} computes it: from the versions actually
@@ -503,16 +497,14 @@ public final class InMemoryFieldSource implements FieldSource {
      * InMemoryFieldSource} over it) inline in a test, without hand-constructing every {@link
      * ClassFixture}, {@link PropertyFixture}, and {@link RelationshipFixture} row.
      *
-     * <p>Every method returns {@code this}. There are no nested or typed sub-builders and no
-     * {@code .end()} call: the builder instead holds internal cursor state -- which class,
-     * version, property, and relationship the chain is currently "inside" -- and each suffix
-     * method (such as {@link #facetable()} or {@link #walkable()}) mutates whichever draft the
-     * cursor currently points at, raising {@link IllegalStateException} if the chain calls a
-     * property-only or relationship-only suffix with no matching draft active. This keeps a call
-     * chain of thirty-plus fluent calls flat and linear to read, at the cost of the compiler not
-     * catching a misplaced suffix -- a trade this test-fixture builder makes deliberately, since it
-     * is typed by hand far more often than it is refactored (field-contract.md section 3.1's contract test
-     * kit is the primary caller).
+     * <p>Every method returns {@code this}. There are no nested or typed sub-builders and no {@code .end()} call: the
+     * builder instead holds internal cursor state -- which class, version, property, and relationship the chain is
+     * currently "inside" -- and each suffix method (such as {@link #facetable()} or {@link #walkable()}) mutates
+     * whichever draft the cursor currently points at, raising {@link IllegalStateException} if the chain calls a
+     * property-only or relationship-only suffix with no matching draft active. This keeps a call chain of thirty-plus
+     * fluent calls flat and linear to read, at the cost of the compiler not catching a misplaced suffix -- a trade this
+     * test-fixture builder makes deliberately, since it is typed by hand far more often than it is refactored (the
+     * contract test kit is the primary caller).
      */
     public static final class Builder {
 
@@ -786,9 +778,8 @@ public final class InMemoryFieldSource implements FieldSource {
         }
 
         /**
-         * Restricts the current class to being readable only by the given roles, per field-contract.md
-         * section 4.10. Applies regardless of whether a property or relationship is currently
-         * active.
+         * Restricts the current class to being readable only by the given roles. Applies regardless of whether a
+         * property or relationship is currently active.
          *
          * @param roles the roles permitted to read this class; never {@code null}
          * @return {@code this}

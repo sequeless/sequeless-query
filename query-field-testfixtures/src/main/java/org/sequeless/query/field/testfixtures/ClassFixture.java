@@ -12,9 +12,8 @@ import java.util.UUID;
  * @param id the durable identity of this class; never {@code null}
  * @param slug the current short name of this class; never {@code null} or blank
  * @param iri the class's IRI in the source ontology; never {@code null} or blank
- * @param readableByRoles the roles permitted to read this class when RBAC facet filtering is
- *     enabled (field-contract.md section 4.10); empty means readable by everyone. Never {@code null},
- *     defensively copied
+ * @param readableByRoles the roles permitted to read this class when RBAC facet filtering is enabled; empty means
+ *     readable by everyone. Never {@code null}, defensively copied
  * @param properties this class's own scalar properties; never {@code null}, defensively copied
  * @param relationships this class's own relationships to other classes; never {@code null},
  *     defensively copied
