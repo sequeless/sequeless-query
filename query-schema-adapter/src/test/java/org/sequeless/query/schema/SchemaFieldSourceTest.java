@@ -583,10 +583,11 @@ class SchemaFieldSourceTest {
     }
 
     @Test
-    void subtypesThatAgreeOnAPropertyShareOneFieldWhoseFlagsAreTheConjunction() {
-        // The root and a subtype both declare "status" with one cardinality. The root withholds searchable, the
-        // subtype withholds facet, so each flag is false on one side only: an AND gives (facet false, search false),
-        // first-wins gives facet true, and last-wins gives search true. Each wrong rule fails this test.
+    void aRootsOwnCopyWinsOverASubtypeCopyWithDifferentFlags() {
+        // Root wins (spec 17): the root declares "status" and a subtype redeclares it with other flags. The root's
+        // copy alone is the scope's Field, so the subtype's facet=false does not withhold facet and the root's
+        // searchable=false stands. A conjunction over both copies would give (facet false, search false), and
+        // first-wins or last-wins would give the other copy's flags; each of those fails this test.
         FieldScope scope = resolve(
                 schema(
                         1,
@@ -613,7 +614,95 @@ class SchemaFieldSourceTest {
                 "Work");
 
         assertThat(scope.facets()).hasSize(1);
-        assertThat(facetNamed(scope, "status").capabilities()).isEqualTo(new Capabilities(true, false, false, true));
+        assertThat(facetNamed(scope, "status").capabilities()).isEqualTo(new Capabilities(true, true, false, true));
+    }
+
+    @Test
+    void aRootsOwnPropertyStaysSortableWhenASubtypeNarrowsItsCardinality() {
+        // Root wins (spec 17, Navigator decision): the root declares "title" as single-valued; a subtype narrows it
+        // to exactly one. The root's copy is the Field, so it stays sortable and is not a conflict. Against the
+        // any-copy rule, the two cardinalities disagree and the Field would be the unusable conflict Field.
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        type(
+                                "Work",
+                                true,
+                                List.of(),
+                                attribute(
+                                        "title",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        true,
+                                        true)),
+                        type(
+                                "Task",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "title",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.exactly(1),
+                                        true,
+                                        true))),
+                "Work");
+
+        assertThat(scope.facets()).hasSize(1);
+        Field title = facetNamed(scope, "title");
+        assertThat(title.capabilities()).isEqualTo(new Capabilities(true, true, true, true));
+        assertThat(title.cardinality()).isEqualTo(Cardinality.SINGLE);
+        assertThat(title.type()).isEqualTo(FieldType.STRING);
+    }
+
+    @Test
+    void aRootsOwnRelationshipWinsOverASubtypeRelationshipWithAnotherTarget() {
+        FieldSource source = source(schema(
+                1,
+                type("Work", true, List.of(), relationship("owner", "Person")),
+                type("Task", false, List.of("Work"), relationship("owner", "Company")),
+                concreteType("Person", attribute("name", Datatype.STRING, true, true)),
+                concreteType("Company")));
+        FieldScope scope = source.resolve(request("Work"));
+
+        assertThat(scope.relationships()).extracting(Relationship::slug).containsExactly("owner");
+        assertThat(scope.relationships().get(0).targetClass()).isEqualTo(classRef("Person"));
+        assertThat(facetNamed(scope, "owner").capabilities().filterable()).isTrue();
+        FieldScope expanded = source.expand(scope, path(segment("owner", "Person")));
+        assertThat(facetNamed(expanded, "owner.name").type()).isEqualTo(FieldType.STRING);
+    }
+
+    @Test
+    void siblingsWithIdenticalDefinitionsOfAnAbsentPropertyShareOneUsableField() {
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        type("Work", true, List.of()),
+                        type(
+                                "A",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "status",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        true,
+                                        true)),
+                        type(
+                                "B",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "status",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        true,
+                                        true))),
+                "Work");
+
+        assertThat(scope.facets()).hasSize(1);
+        Field status = facetNamed(scope, "status");
+        assertThat(status.capabilities()).isEqualTo(new Capabilities(true, true, true, true));
+        assertThat(status.conflict()).isEmpty();
     }
 
     @Test

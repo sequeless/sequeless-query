@@ -1,11 +1,13 @@
 package org.sequeless.query.schema;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import org.sequeless.ontology.schema.api.AttributeDefinition;
 import org.sequeless.ontology.schema.api.Datatype;
 import org.sequeless.ontology.schema.api.PropertyDefinition;
@@ -82,7 +84,8 @@ final class PropertyMapper {
     /**
      * The Fields a root's FieldScope carries: one per property IRI declared by the root or by any of its
      * transitive subtypes (spec 17). The root's own properties come first, in declaration order, then the
-     * subtype-only ones. The conflict rule is on {@link #unionField}.
+     * subtype-only ones. A property the root declares is the root's copy alone (see {@link #groupByIri}); the
+     * conflict rule for a subtype-only property is on {@link #unionField}.
      *
      * @param covered the root and its transitive subtypes, as {@link SchemaView#typeAndSubtypes} returns them
      * @return one Field per property IRI, in first-declared order
@@ -199,12 +202,27 @@ final class PropertyMapper {
                 .orElse(List.of());
     }
 
-    /** The property definitions of the covered types, grouped by property IRI, in first-declared order. */
+    /**
+     * The property definitions the root's scope groups, by property IRI, in first-declared order. The root wins
+     * (Navigator decision, spec 17): an IRI the root's own list declares, inherited copies included, is grouped
+     * from the root's copy alone, so a subtype's copy of it, even a narrowed one, is not part of the scope. Only
+     * an IRI the root does not declare is grouped across the subtypes, where its copies must agree to be usable.
+     * {@code covered} comes root first, as {@link SchemaView#typeAndSubtypes} returns it.
+     */
     private static List<List<PropertyDefinition>> groupByIri(List<TypeDefinition> covered) {
+        TypeDefinition root = covered.get(0);
         Map<String, List<PropertyDefinition>> groups = new LinkedHashMap<>();
-        for (TypeDefinition type : covered) {
-            for (PropertyDefinition property : type.properties()) {
-                groups.computeIfAbsent(property.iri(), iri -> new ArrayList<>()).add(property);
+        Set<String> rootIris = new HashSet<>();
+        for (PropertyDefinition property : root.properties()) {
+            rootIris.add(property.iri());
+            groups.computeIfAbsent(property.iri(), iri -> new ArrayList<>()).add(property);
+        }
+        for (TypeDefinition subtype : covered.subList(1, covered.size())) {
+            for (PropertyDefinition property : subtype.properties()) {
+                if (!rootIris.contains(property.iri())) {
+                    groups.computeIfAbsent(property.iri(), iri -> new ArrayList<>())
+                            .add(property);
+                }
             }
         }
         return new ArrayList<>(groups.values());
