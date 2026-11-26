@@ -24,6 +24,7 @@
     <maven.deploy.skip>false</maven.deploy.skip>
     <!-- The version the org's Spring modules pin (automation-temporal-adapter, expression-spring-boot-autoconfig). -->
     <spring-boot.version>4.1.1</spring-boot.version>
+    <filter-sql-adapter.version>0.1.5</filter-sql-adapter.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <postgresql.version>42.7.14</postgresql.version>
     <assertj.version>3.27.7</assertj.version>
@@ -54,6 +55,21 @@
   <dependencies>
     <!-- Compile dependencies, spec 14 section 5. Each is declared only when the main code imports it, because
          dependency:analyze fails on an unused compile-scope declaration. -->
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-field</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>filter-sql-adapter</artifactId>
+      <version>${filter-sql-adapter.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
