@@ -15,7 +15,7 @@ Labels such as "(Q8)" or "(Q11)" name the Navigator decisions taken for this spe
   - `filter-core` 0.1.5 (`FilterNode`, `FieldRegistry`, `FilterParser`, `FilterValidator`, `FieldContributor`). This repo builds against 0.1.5, not the 0.1.4 the BOM listed at the start, because of the date operators (Q28, section 6.6). The spec minimum was 0.1.1 for the `FieldResolver` port; the port itself lives in `filter-sql-adapter` (see below). The current release satisfies the minimum.
   - `filter-sql-adapter` 0.1.5 (`FieldResolver`, `Field`, `SqlExpression`, `ColumnMapping`). Required by `query-postgres-jsonb-adapter` only.
   - `filter-sql-postgres-adapter` 0.1.1 (`PostgresQueryBuilder`). Required by `query-postgres-jsonb-adapter` only.
-  - `schema-contract` 0.1.0 (`Schema`, `OntologyVersion`, `SchemaSource`). Required by `query-schema-adapter` only.
+  - `schema-contract` 0.1.0 (`Schema`, `OntologyVersion`, `SchemaSource`). Required by `query-schema-adapter` and `query-spring-boot-autoconfig` only.
 - **Drift against the spec:** the spec's version notes (filter 0.1.1, sequeless-ontology 0.1.x) are minimums. The BOM lists later releases, and this spec builds against the BOM.
 
 ## 2. Moves
@@ -152,12 +152,14 @@ Records that can gain components (`BrowseQuery`, `BrowseResult`, `ObjectView`, `
 | `query-field` | `kernel-identity` | JUnit, AssertJ, ArchUnit | ADR 0003: kernel-identity is the only compile dependency. The enforcer rule `ban-all-runtime-dependencies` allows that one artifact |
 | `query-field-testfixtures` | `query-field`, JUnit, AssertJ | | Published test support. Kit and in-memory source in `src/main`, as `facet-core-testfixtures` did (ADR 0002) |
 | `query-core` | `query-field`, `filter-core`, `kernel-identity`, `kernel-values` | JUnit, AssertJ, ArchUnit | Use cases, ports, the Field-to-`FieldRegistry` bridge, Object view types. No `schema-contract`, no JDBC |
-| `query-schema-adapter` | `query-field`, `schema-contract`, `kernel-identity` | | The only module that depends on `schema-contract` (#14, #16 point 6) |
+| `query-schema-adapter` | `query-field`, `schema-contract`, `kernel-identity` | | Implements `FieldSource` over `SchemaSource` (#14, #16 point 6). The rule on `schema-contract` is below the table |
 | `query-postgres-jsonb-adapter` | `query-core`, `query-field`, `filter-sql-adapter`, `filter-sql-postgres-adapter`, `kernel-values`, Spring JDBC | `query-testkit`, Testcontainers | Implements `FieldResolver` (filter-sql-adapter) and the browse, read and index ports. Owns index DDL and V1/V2 (Q5) |
 | `query-testkit` | `query-core`, `query-field`, `query-field-testfixtures`, `kernel-identity`, `kernel-values`, `filter-core`, `jackson-databind`, JUnit, AssertJ | ArchUnit | Contracts: `BrowseContract`, `ReadContract`, `IndexPreparationContract`. Also the in-memory `BrowsePort`, `ReadPort` and index references. `jackson-databind` is needed by the contract API (the `JsonNode` operands of `FieldFilter`), not only by the in-memory port |
-| `query-spring-boot-autoconfig` | `query-core`, `query-schema-adapter`, `query-postgres-jsonb-adapter`, Spring Boot autoconfigure | `ApplicationContextRunner` | Thin wiring. Exposes `prepare` (#24, spec 14 list) |
+| `query-spring-boot-autoconfig` | `query-core`, `query-schema-adapter`, `query-postgres-jsonb-adapter`, `schema-contract`, Spring Boot autoconfigure | `ApplicationContextRunner` | Thin wiring. Exposes `prepare` (#24, spec 14 list) |
 
-ArchUnit: every module has a `BoundaryRulesTest` (ADR kernel 0001 and spec 11 section 5.4). The template's four rules stay. The "depends only on the JDK and itself" rule is widened to each module's declared dependencies. `query-core` also forbids `org.springframework..` and `org.sequeless.ontology..`.
+Only `query-schema-adapter` and `query-spring-boot-autoconfig` depend on `schema-contract`. The adapter implements FieldSource over SchemaSource. The autoconfig, as composition root, names the SchemaSource bean type to wire it. query-core, query-field, the stores and the testkit must not depend on it.
+
+ArchUnit: every module has a `BoundaryRulesTest` (ADR kernel 0001 and spec 11 section 5.4). The template's four rules stay. The "depends only on the JDK and itself" rule is widened to each module's declared dependencies. `query-core` also forbids `org.springframework..` and `org.sequeless.ontology..`. In `query-spring-boot-autoconfig`, only the `@AutoConfiguration` and `@Configuration` classes name the schema contract.
 
 ## 6. Behaviour of the ports and use cases
 
@@ -194,7 +196,7 @@ ArchUnit: every module has a `BoundaryRulesTest` (ADR kernel 0001 and spec 11 se
 - New: `FieldSource.rootClasses(TenantId tenant)` returns `List<ClassRef>` (#24 point 8).
 - `query-schema-adapter` implements `FieldSource` over `SchemaSource.schema(TenantId)`. It maps `Schema.ontologyVersion().value()` one-to-one to an `OntologyVersionRef` (Q10).
 - The stamp: `StampCalculator` sorts `OntologyVersionRef` values numerically before joining them. This changes the stamp format from the ontology's string sort, and the change is recorded in ADR 0001 (Q11).
-- **No consistent active Ontology (Q19).** `SchemaSource` throws `NoConsistentOntologyException` (schema-contract 0.2.0); `OntologyException` (ontology-core) extends it. query-schema-adapter translates it to `UNKNOWN_TENANT` in every `FieldSource` method. Option C of the Navigator's choice: the supertype relationship, not a wrapper and not a throw-site change. One-way door: the public supertype relationship.
+- **No consistent active Ontology (Q19).** `SchemaSource` throws `NoConsistentOntologyException` (schema-contract 0.2.0); `OntologyException` (ontology-core) extends it. query-schema-adapter translates it to `UNKNOWN_TENANT` in every `FieldSource` method. Option C of the Navigator's choice: the supertype relationship, not a wrapper and not a throw-site change. One-way door: the public supertype relationship. Follow-up (autoconfig, Navigator decision): query-spring-boot-autoconfig may depend on schema-contract as the composition root.
 
 ### 6.4 Postgres JSONB adapter
 

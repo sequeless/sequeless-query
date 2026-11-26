@@ -9,6 +9,7 @@
     "query-core": { "component": "query-core", "initial-version": "0.1.0", "skip-snapshot": true },
     "query-schema-adapter": { "component": "query-schema-adapter", "initial-version": "0.1.0", "skip-snapshot": true },
     "query-testkit": { "component": "query-testkit", "initial-version": "0.1.0", "skip-snapshot": true },
-    "query-postgres-jsonb-adapter": { "component": "query-postgres-jsonb-adapter", "initial-version": "0.1.0", "skip-snapshot": true }
+    "query-postgres-jsonb-adapter": { "component": "query-postgres-jsonb-adapter", "initial-version": "0.1.0", "skip-snapshot": true },
+    "query-spring-boot-autoconfig": { "component": "query-spring-boot-autoconfig", "initial-version": "0.1.0", "skip-snapshot": true }
   }
 }

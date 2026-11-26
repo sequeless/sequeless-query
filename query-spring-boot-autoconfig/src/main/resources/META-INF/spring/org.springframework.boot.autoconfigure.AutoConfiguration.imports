@@ -1,0 +1,2 @@
+org.sequeless.query.autoconfig.QueryAutoConfiguration
+org.sequeless.query.autoconfig.QueryServiceAutoConfiguration

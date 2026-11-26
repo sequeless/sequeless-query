@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Pinned to a released sequeless-build-parent (spec 1). Renovate bumps it. -->
+  <parent>
+    <groupId>org.sequeless</groupId>
+    <artifactId>sequeless-build-parent</artifactId>
+    <version>0.1.3</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>org.sequeless</groupId>
+  <artifactId>query-spring-boot-autoconfig</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>query-spring-boot-autoconfig</name>
+  <description>Spring Boot autoconfiguration of the Query side: the Field source, the Postgres ports and the query service (spec 14, section 6.6 and Q25 to Q31 decisions; section 5 table)</description>
+
+  <properties>
+    <!-- Matches query-core: this module reads query-core classes compiled for 25. -->
+    <maven.compiler.release>25</maven.compiler.release>
+    <!-- Not a core module: the parent defaults sequeless.enforcer.core.skip to true, so its enforcer ban on Spring stays off here, as in query-postgres-jsonb-adapter. -->
+    <!-- Published: the BOM resolves it (spec 14, sections 7.1 and 7.2). Released by release-please, first at 0.1.0. -->
+    <maven.deploy.skip>false</maven.deploy.skip>
+    <!-- The version the org's Spring modules pin (query-postgres-jsonb-adapter, automation-temporal-adapter). -->
+    <spring-boot.version>4.1.1</spring-boot.version>
+    <filter-core.version>0.1.5</filter-core.version>
+    <schema-contract.version>0.2.0</schema-contract.version>
+    <kernel-identity.version>0.1.1</kernel-identity.version>
+    <assertj.version>3.27.7</assertj.version>
+    <junit.version>6.1.3</junit.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Spec 1: library repos import junit-bom in their own POM. The parent does not manage JUnit. -->
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Imported after junit-bom, so junit-bom wins for JUnit. Manages Spring Boot, Spring JDBC, Spring Tx and the Spring Framework modules. -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- The adapter's filter-sql-adapter 0.1.5 brings filter-core 0.1.4 transitively. Managing it here makes this module
+           resolve the release query-core declares, so the enforcer's convergence rule holds (as query-postgres-jsonb-adapter does). -->
+      <dependency>
+        <groupId>org.sequeless</groupId>
+        <artifactId>filter-core</artifactId>
+        <version>${filter-core.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- Compile dependencies, spec 14 section 5, plus the Spring artifacts the autoconfiguration names directly.
+         Each is declared only when the main code imports it, because dependency:analyze fails on an unused
+         compile-scope declaration and on a used undeclared one. -->
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-field</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-schema-adapter</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>query-postgres-jsonb-adapter</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- The host's SchemaSource bean type: the autoconfiguration conditions on it and passes it to SchemaFieldSource.
+         This is the one place outside query-schema-adapter that names schema-contract (see the module README). -->
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>schema-contract</artifactId>
+      <version>${schema-contract.version}</version>
+      <exclusions>
+        <!-- schema-contract 0.2.0 also pins kernel-identity 0.1.1. This module declares kernel-identity only in test scope; at runtime it comes through query-field, which sets the version. The exclusion keeps schema-contract's pin off this module's classpath. -->
+        <exclusion>
+          <groupId>org.sequeless</groupId>
+          <artifactId>kernel-identity</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+    </dependency>
+
+    <!-- Test scope. ApplicationContextRunner is in spring-boot-test. The stub SchemaSource names TenantId and the
+         contract types; the boundary test reads these artifacts' classes. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- AutoConfigurations.of extends Configurations, which lives in this artifact, so the test names it directly. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Test scope: the tests name TenantId and Scope directly. The runtime copy comes through query-field. -->
+    <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>kernel-identity</artifactId>
+      <version>${kernel-identity.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- The boundary test imports these directly, so they stay declared, or dependency:analyze reports them as used undeclared. -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <id>github</id>
+      <url>https://maven.pkg.github.com/sequeless/*</url>
+    </repository>
+  </repositories>
+</project>
