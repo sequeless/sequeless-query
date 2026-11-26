@@ -12,7 +12,7 @@
 
   <groupId>org.sequeless</groupId>
   <artifactId>query-spring-boot-autoconfig</artifactId>
-  <version>0.2.2</version>
+  <version>0.3.0</version>
   <name>query-spring-boot-autoconfig</name>
   <description>Spring Boot autoconfiguration of the Query side: the Field source, the Postgres ports and the query service (spec 14, section 6.6 and Q25 to Q31 decisions; section 5 table)</description>
 
