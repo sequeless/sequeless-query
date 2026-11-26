@@ -21,8 +21,8 @@
     <maven.compiler.release>25</maven.compiler.release>
     <!-- Opts in to the parent's enforcer ban on Spring, Jena and Lombok (spec 1, §5). -->
     <sequeless.enforcer.core.skip>false</sequeless.enforcer.core.skip>
-    <!-- Not deployed from the template repo itself (spec 2, §6). -->
-    <maven.deploy.skip>true</maven.deploy.skip>
+    <!-- Published: the BOM resolves it (spec 14, sections 7.1 and 7.2). Released by release-please, first at 0.1.0. -->
+    <maven.deploy.skip>false</maven.deploy.skip>
     <filter-core.version>0.1.4</filter-core.version>
     <kernel-identity.version>0.1.1</kernel-identity.version>
     <kernel-values.version>0.1.1</kernel-values.version>
