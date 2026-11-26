@@ -46,6 +46,27 @@ class FieldKeyTest {
         assertThatThrownBy(() -> FieldKey.decode("a|b").add("c")).isInstanceOf(UnsupportedOperationException.class);
     }
 
+    @Test
+    void isTraversalIsFalseForABareIri() {
+        assertThat(FieldKey.isTraversal("urn:ont:status")).isFalse();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a|b", "a|", "|a", "|"})
+    void isTraversalIsTrueForAKeyWithASeparator(String key) {
+        assertThat(FieldKey.isTraversal(key)).isTrue();
+    }
+
+    @Test
+    void isTraversalIsTrueForTheEncodingOfAMultiSegmentPath() {
+        assertThat(FieldKey.isTraversal(FieldKey.encode(path("a", "b")))).isTrue();
+    }
+
+    @Test
+    void isTraversalRejectsNull() {
+        assertThatNullPointerException().isThrownBy(() -> FieldKey.isTraversal(null));
+    }
+
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {" ", "\t"})

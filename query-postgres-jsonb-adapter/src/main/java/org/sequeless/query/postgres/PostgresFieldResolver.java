@@ -50,7 +50,7 @@ public final class PostgresFieldResolver implements FieldResolver {
     @Override
     public Optional<org.sequeless.filter.sql.api.Field> resolve(String path) {
         Objects.requireNonNull(path, "path must not be null");
-        if (path.indexOf('|') >= 0) {
+        if (FieldKey.isTraversal(path)) {
             throw new InvalidQueryException(
                     List.of("traversal path '" + path + "' cannot be used as a filter: only a direct Field can"));
         }
