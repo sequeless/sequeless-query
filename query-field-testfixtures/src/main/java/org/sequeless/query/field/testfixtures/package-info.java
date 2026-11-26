@@ -9,10 +9,11 @@
  *       {@code RelationshipFixture}, and the canned scenarios in {@code ContractFixtures}) — a
  *       small, ontology-shaped vocabulary for describing classes, properties, and relationships
  *       without committing to any one {@code FieldSource} implementation's internal model.
- *   <li><b>An in-memory reference implementation</b> of {@code FieldSource} and {@code
- *       ConceptSource} built directly from those fixtures, useful both as a lightweight stand-in
- *       for tests elsewhere in the reactor and as the executable specification against which the
- *       contract test kit below is itself proven correct.
+ *   <li><b>In-memory reference implementations</b>: {@code InMemoryFieldSource}, built directly from
+ *       those fixtures, and {@code InMemoryConceptSource}, which has its own storage and does not
+ *       use them. They are useful both as lightweight stand-ins for tests elsewhere in the reactor
+ *       and as the executable specification against which the contract test kit below is itself
+ *       proven correct.
  *   <li><b>A reusable contract test kit</b> — abstract JUnit test classes that any {@code
  *       FieldSource}/{@code ConceptSource} implementation, including an RDF-backed one added
  *       later, extends and points at its own instance to verify it upholds field-contract.md's semantics
