@@ -9,7 +9,9 @@ import java.util.Set;
 import org.sequeless.kernel.identity.TenantId;
 import org.sequeless.ontology.schema.api.PropertyDefinition;
 import org.sequeless.ontology.schema.api.RelationshipDefinition;
+import org.sequeless.ontology.schema.api.Schema;
 import org.sequeless.ontology.schema.api.TypeDefinition;
+import org.sequeless.ontology.schema.spi.NoConsistentOntologyException;
 import org.sequeless.ontology.schema.spi.SchemaSource;
 import org.sequeless.query.field.api.ClassRef;
 import org.sequeless.query.field.api.Field;
@@ -38,9 +40,10 @@ import org.sequeless.query.field.spi.FieldSource;
  * <p>An IRI containing '|' is rejected by PathSegment and Relationship with IllegalArgumentException, which
  * aborts the call for that class.
  *
- * <p>An unknown tenant is not translated into {@code UNKNOWN_TENANT}. {@link SchemaSource} reports
- * one only through an unchecked exception whose type this module cannot name, so that exception
- * propagates unchanged.
+ * <p>A tenant with no consistent active Ontology gives {@code UNKNOWN_TENANT}: {@link SchemaSource}
+ * throws {@link NoConsistentOntologyException} for it, and every method translates that exception.
+ * A tenant that {@link SchemaSource} does not know at all is whatever {@link SchemaSource} does; this
+ * module does not change that case, and any other exception it throws propagates unchanged.
  */
 public final class SchemaFieldSource implements FieldSource {
 
@@ -160,8 +163,15 @@ public final class SchemaFieldSource implements FieldSource {
                 .toList();
     }
 
+    /** Every method reads the Schema through here, so the translation to UNKNOWN_TENANT lives in one place. */
     private SchemaView view(TenantId tenant) {
-        return new SchemaView(schemaSource.schema(tenant));
+        Schema schema;
+        try {
+            schema = schemaSource.schema(tenant);
+        } catch (NoConsistentOntologyException error) {
+            throw new FieldResolutionException(FieldErrorCode.UNKNOWN_TENANT);
+        }
+        return new SchemaView(schema);
     }
 
     private static TypeDefinition root(SchemaView view, ClassRef root) {
