@@ -10,10 +10,12 @@ import static org.sequeless.query.testkit.QueryFixtures.V1;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
+import org.sequeless.kernel.identity.TenantId;
 import org.sequeless.query.api.IndexPreparationResult;
 import org.sequeless.query.field.api.ClassRef;
 import org.sequeless.query.field.api.Field;
@@ -22,15 +24,20 @@ import org.sequeless.query.field.api.OntologyVersionRef;
 import org.sequeless.query.spi.IndexPreparationPort;
 
 /**
- * The mechanical form of the behavioural contract documented on {@link IndexPreparationPort}'s
- * interface-level javadoc. Every {@link IndexPreparationPort} implementation, adapter or test double,
- * is expected to satisfy every clause of that javadoc, and this class exercises each clause against
- * whatever {@link Environment} {@link #freshEnvironment()} supplies.
+ * The mechanical form of the clauses of {@link IndexPreparationPort}'s interface-level javadoc that
+ * the port exposes: null handling, the result (one entry per distinct registration key, sorted by
+ * that key), idempotence, immutability, the version not being checked against the Fields, and
+ * per-tenant registration. Every {@link IndexPreparationPort} implementation, adapter or test double,
+ * is expected to satisfy them, and this class exercises each one against whatever {@link Environment}
+ * {@link #freshEnvironment()} supplies.
  *
- * <p>The contract calls {@link IndexPreparationPort#prepare}, then the environment's {@code
- * awaitPrepared} hook, and then asserts the state the port reports. The hook is how an adapter whose
- * preparation is asynchronous says that the preparation is done or durably accepted (ADR 0002). An
- * adapter that prepares synchronously passes a no-op.
+ * <p>This contract does not assert index structures or derived state, such as expression indexes, DDL
+ * or a search backfill. Each adapter's own tests assert those (spec 14, section 6.2, Q24).
+ *
+ * <p>Every call this contract makes to {@link IndexPreparationPort#prepare} goes through one helper,
+ * which then runs the environment's {@code awaitPrepared} hook. That hook is the seam an adapter
+ * whose preparation is asynchronous uses to say that the preparation is done or durably accepted
+ * (ADR 0002). An adapter that prepares synchronously passes a no-op.
  *
  * <p>To use this contract, extend it from a test class in your own module and implement {@link
  * #freshEnvironment()}:
@@ -72,63 +79,99 @@ public abstract class IndexPreparationContract {
         Environment env = freshEnvironment();
         Map<ClassRef, List<Field>> roots = taskRoots();
 
-        assertThatNullPointerException().isThrownBy(() -> env.port().prepare(null, V1, roots));
-        assertThatNullPointerException().isThrownBy(() -> env.port().prepare(TENANT, null, roots));
-        assertThatNullPointerException().isThrownBy(() -> env.port().prepare(TENANT, V1, null));
+        assertThatNullPointerException().isThrownBy(() -> prepare(env, null, V1, roots));
+        assertThatNullPointerException().isThrownBy(() -> prepare(env, TENANT, null, roots));
+        assertThatNullPointerException().isThrownBy(() -> prepare(env, TENANT, V1, null));
 
         Map<ClassRef, List<Field>> nullKey = new HashMap<>();
         nullKey.put(null, List.of());
-        assertThatNullPointerException().isThrownBy(() -> env.port().prepare(TENANT, V1, nullKey));
+        assertThatNullPointerException().isThrownBy(() -> prepare(env, TENANT, V1, nullKey));
 
         Map<ClassRef, List<Field>> nullValue = new HashMap<>();
         nullValue.put(taskRoot(), null);
-        assertThatNullPointerException().isThrownBy(() -> env.port().prepare(TENANT, V1, nullValue));
+        assertThatNullPointerException().isThrownBy(() -> prepare(env, TENANT, V1, nullValue));
     }
 
     @Test
     void prepareWithNoRootsIsANoOp() {
         Environment env = freshEnvironment();
 
-        IndexPreparationResult result = env.port().prepare(TENANT, V1, Map.of());
+        IndexPreparationResult result = prepare(env, TENANT, V1, Map.of());
 
         assertThat(result.newlyRegistered()).isEmpty();
     }
 
     @Test
-    void fieldsWithoutSearchableCapabilityNeedNoPreparation() {
+    void nonSearchableFieldsRegisterNothing() {
         Environment env = freshEnvironment();
         List<Field> notSearchable = taskFields().stream()
                 .filter(field -> !field.capabilities().searchable())
                 .toList();
         assertThat(notSearchable).isNotEmpty();
 
-        IndexPreparationResult result = env.port().prepare(TENANT, V1, Map.of(taskRoot(), notSearchable));
+        IndexPreparationResult result = prepare(env, TENANT, V1, Map.of(taskRoot(), notSearchable));
 
         assertThat(result.newlyRegistered()).isEmpty();
     }
 
     @Test
-    void prepareReportsNewlyRegisteredSearchableFieldsInDeterministicOrder() {
+    void filterableOnlyFieldRegistersNothing() {
+        Environment env = freshEnvironment();
+        Field email = QueryFixtures.resolve(TENANT, QueryFixtures.PERSON).facets().stream()
+                .filter(field -> field.path().asSlugPath().equals("email"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(email.capabilities().filterable()).isTrue();
+        assertThat(email.capabilities().searchable()).isFalse();
+        assertThat(email.capabilities().facetable()).isFalse();
+        assertThat(email.capabilities().sortable()).isFalse();
+
+        IndexPreparationResult result = prepare(env, TENANT, V1, Map.of(personRoot(), List.of(email)));
+
+        assertThat(result.newlyRegistered()).isEmpty();
+    }
+
+    @Test
+    void prepareReportsNewlyRegisteredSearchableFieldsInKeyOrder() {
         Environment first = freshEnvironment();
-        IndexPreparationResult forward = first.port().prepare(TENANT, V1, taskRoots());
-        assertThat(forward.newlyRegistered()).containsExactlyInAnyOrder(titlePath(), descriptionPath());
+        IndexPreparationResult forward = prepare(first, TENANT, V1, taskRoots());
+        // Keys are the property IRIs: ".../query-testkit#description" sorts before ".../query-testkit#title".
+        assertThat(forward.newlyRegistered()).containsExactly(descriptionPath(), titlePath());
 
         // The same Fields, in the reverse order, in a fresh environment: the result is the same list.
         Environment second = freshEnvironment();
-        IndexPreparationResult reversed = second.port().prepare(TENANT, V1, reversedTaskRoots());
+        IndexPreparationResult reversed = prepare(second, TENANT, V1, reversedTaskRoots());
+        assertThat(reversed.newlyRegistered()).isEqualTo(forward.newlyRegistered());
+    }
+
+    @Test
+    void twoRootsSharingAPropertyRegisterItOnce() {
+        // Both roots carry the title Field, so the registration key is shared between the two classes.
+        Map<ClassRef, List<Field>> taskFirst = new LinkedHashMap<>();
+        taskFirst.put(taskRoot(), taskFields());
+        taskFirst.put(personRoot(), personFieldsWithTitle());
+
+        Map<ClassRef, List<Field>> personFirst = new LinkedHashMap<>();
+        personFirst.put(personRoot(), personFieldsWithTitle());
+        personFirst.put(taskRoot(), taskFields());
+
+        IndexPreparationResult forward = prepare(freshEnvironment(), TENANT, V1, taskFirst);
+        IndexPreparationResult reversed = prepare(freshEnvironment(), TENANT, V1, personFirst);
+
+        // One entry per key, in key order: description, personName, title.
+        assertThat(forward.newlyRegistered()).containsExactly(descriptionPath(), personNamePath(), titlePath());
         assertThat(reversed.newlyRegistered()).isEqualTo(forward.newlyRegistered());
     }
 
     @Test
     void searchableFieldsOfEveryRootAreRegistered() {
         Environment env = freshEnvironment();
-        Map<ClassRef, List<Field>> roots = new HashMap<>(taskRoots());
+        Map<ClassRef, List<Field>> roots = new LinkedHashMap<>(taskRoots());
         roots.put(personRoot(), personFields());
 
-        IndexPreparationResult result = env.port().prepare(TENANT, V1, roots);
+        IndexPreparationResult result = prepare(env, TENANT, V1, roots);
 
-        assertThat(result.newlyRegistered())
-                .containsExactlyInAnyOrder(titlePath(), descriptionPath(), personNamePath());
+        assertThat(result.newlyRegistered()).containsExactly(descriptionPath(), personNamePath(), titlePath());
     }
 
     @Test
@@ -136,22 +179,20 @@ public abstract class IndexPreparationContract {
         Environment env = freshEnvironment();
         Map<ClassRef, List<Field>> roots = taskRoots();
 
-        IndexPreparationResult firstCall = env.port().prepare(TENANT, V1, roots);
-        assertThat(firstCall.newlyRegistered()).containsExactlyInAnyOrder(titlePath(), descriptionPath());
+        IndexPreparationResult firstCall = prepare(env, TENANT, V1, roots);
+        assertThat(firstCall.newlyRegistered()).containsExactly(descriptionPath(), titlePath());
 
-        env.awaitPrepared().run();
-
-        IndexPreparationResult repeat = env.port().prepare(TENANT, V1, roots);
+        IndexPreparationResult repeat = prepare(env, TENANT, V1, roots);
         assertThat(repeat.newlyRegistered()).isEmpty();
 
-        IndexPreparationResult again = env.port().prepare(TENANT, V1, roots);
+        IndexPreparationResult again = prepare(env, TENANT, V1, roots);
         assertThat(again.newlyRegistered()).isEmpty();
     }
 
     @Test
     void newlyRegisteredIsImmutable() {
         Environment env = freshEnvironment();
-        List<FieldPath> registered = env.port().prepare(TENANT, V1, taskRoots()).newlyRegistered();
+        List<FieldPath> registered = prepare(env, TENANT, V1, taskRoots()).newlyRegistered();
 
         assertThatThrownBy(() -> registered.add(titlePath())).isInstanceOf(UnsupportedOperationException.class);
     }
@@ -161,20 +202,31 @@ public abstract class IndexPreparationContract {
         Environment env = freshEnvironment();
         OntologyVersionRef notDefinedByTheFields = new OntologyVersionRef(2);
 
-        IndexPreparationResult result = env.port().prepare(TENANT, notDefinedByTheFields, taskRoots());
+        IndexPreparationResult result = prepare(env, TENANT, notDefinedByTheFields, taskRoots());
 
-        assertThat(result.newlyRegistered()).containsExactlyInAnyOrder(titlePath(), descriptionPath());
+        assertThat(result.newlyRegistered()).containsExactly(descriptionPath(), titlePath());
     }
 
     @Test
     void registrationIsPerTenant() {
         Environment env = freshEnvironment();
 
-        env.port().prepare(TENANT, V1, taskRoots());
-        env.awaitPrepared().run();
+        prepare(env, TENANT, V1, taskRoots());
 
-        IndexPreparationResult otherTenant = env.port().prepare(OTHER_TENANT, V1, taskRoots());
-        assertThat(otherTenant.newlyRegistered()).containsExactlyInAnyOrder(titlePath(), descriptionPath());
+        IndexPreparationResult otherTenant = prepare(env, OTHER_TENANT, V1, taskRoots());
+        assertThat(otherTenant.newlyRegistered()).containsExactly(descriptionPath(), titlePath());
+    }
+
+    /**
+     * The one place this contract calls {@link IndexPreparationPort#prepare}. It runs the environment's
+     * {@code awaitPrepared} hook after every call, so an asynchronous adapter is waited for before its
+     * state is read.
+     */
+    private static IndexPreparationResult prepare(
+            Environment env, TenantId tenant, OntologyVersionRef version, Map<ClassRef, List<Field>> rootFields) {
+        IndexPreparationResult result = env.port().prepare(tenant, version, rootFields);
+        env.awaitPrepared().run();
+        return result;
     }
 
     // -- Fixture helpers --------------------------------------------------------------------------
@@ -195,6 +247,16 @@ public abstract class IndexPreparationContract {
 
     private static List<Field> personFields() {
         return QueryFixtures.resolve(TENANT, QueryFixtures.PERSON).facets();
+    }
+
+    /** The Person Fields plus the Task's title Field, which carries the same property IRI as Task's own. */
+    private static List<Field> personFieldsWithTitle() {
+        List<Field> fields = new ArrayList<>(personFields());
+        fields.add(taskFields().stream()
+                .filter(field -> field.path().asSlugPath().equals("title"))
+                .findFirst()
+                .orElseThrow());
+        return fields;
     }
 
     private static ClassRef taskRoot() {

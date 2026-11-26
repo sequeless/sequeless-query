@@ -2,6 +2,7 @@ package org.sequeless.query.testkit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.sequeless.query.testkit.QueryFixtures.ASSIGNED_TO_IRI;
 import static org.sequeless.query.testkit.QueryFixtures.BELONGS_TO_PROJECT_IRI;
 import static org.sequeless.query.testkit.QueryFixtures.DESCRIPTION_IRI;
@@ -39,6 +40,7 @@ import org.sequeless.query.api.BrowseQuery;
 import org.sequeless.query.api.BrowseResult;
 import org.sequeless.query.api.Direction;
 import org.sequeless.query.api.FacetBucket;
+import org.sequeless.query.api.InvalidQueryException;
 import org.sequeless.query.api.ObjectView;
 import org.sequeless.query.api.Page;
 import org.sequeless.query.api.PropertyRef;
@@ -69,6 +71,13 @@ import org.sequeless.query.spi.BrowsePort;
  * <p>The scenario is the Task, Project and Person classes of {@code QueryFixtures}. The scopes come
  * from {@code query-field-testfixtures}, so the contract needs no ontology, no schema and no
  * particular storage technology.
+ *
+ * <p>Three clauses of {@link BrowsePort} are pinned with fixtures here. A reference facet bucket
+ * drops a missing or soft-deleted target (spec 14, Q21). Free text is matched against the root's own
+ * searchable Fields, and a traversal Field that an expansion adds is not searched (Q22). A filter
+ * shape the port does not evaluate is rejected with {@link InvalidQueryException}, for AnyFilter, a
+ * traversal path, {@code like} and {@code not like} (Q23). Free text does not reach a property that
+ * is searchable only on a concrete subtype. That is a documented limit, so it is not pinned here.
  */
 public abstract class BrowseContract {
 
@@ -230,6 +239,42 @@ public abstract class BrowseContract {
                 .containsExactlyInAnyOrder(TASK_IRI, PROJECT_IRI);
     }
 
+    @Test
+    void anyFilterIsRejectedAsInvalidQuery() {
+        Environment env = freshEnvironment();
+        FieldScope scope = QueryFixtures.taskScope(TENANT);
+        seedTask(env, BASE, "A task", "OPEN", 1, FEB_1, null, null);
+
+        assertRejectedAsInvalidQuery(env, scope, Filters.any("is", text("OPEN")));
+    }
+
+    @Test
+    void traversalPathFilterIsRejectedAsInvalidQuery() {
+        Environment env = freshEnvironment();
+        FieldScope scope = QueryFixtures.taskScope(TENANT);
+        seedTask(env, BASE, "A task", "OPEN", 1, FEB_1, null, null);
+
+        assertRejectedAsInvalidQuery(env, scope, is(ASSIGNED_TO_IRI + "|" + PERSON_NAME_IRI, text("Alice Smith")));
+    }
+
+    @Test
+    void likeFilterIsRejectedAsInvalidQuery() {
+        Environment env = freshEnvironment();
+        FieldScope scope = QueryFixtures.taskScope(TENANT);
+        seedTask(env, BASE, "A task", "OPEN", 1, FEB_1, null, null);
+
+        assertRejectedAsInvalidQuery(env, scope, Filters.field(TITLE_IRI, "like", text("A%")));
+    }
+
+    @Test
+    void notLikeFilterIsRejectedAsInvalidQuery() {
+        Environment env = freshEnvironment();
+        FieldScope scope = QueryFixtures.taskScope(TENANT);
+        seedTask(env, BASE, "A task", "OPEN", 1, FEB_1, null, null);
+
+        assertRejectedAsInvalidQuery(env, scope, Filters.field(TITLE_IRI, "not like", text("A%")));
+    }
+
     // -- Sort and default order -------------------------------------------------------------------
 
     @Test
@@ -373,12 +418,32 @@ public abstract class BrowseContract {
         ObjectId forD = seedTask(env, BASE.plusSeconds(1), "For D", "OPEN", 1, FEB_1, ID_D, null);
         ObjectId forC = seedTask(env, BASE.plusSeconds(2), "For C", "OPEN", 2, FEB_2, ID_C, null);
 
-        FieldPath assignedTo = QueryFixtures.relationshipPath(scope, "assignedTo");
+        FieldPath assignedTo = QueryFixtures.facetPath(scope, "assignedTo");
         BrowseQuery ascending = withSorts(List.of(new Sort(assignedTo, Direction.ASC)), new Page(0, 20));
         assertThat(browseIds(env, scope, ascending)).isEqualTo(List.of(forC, forD));
 
         BrowseQuery descending = withSorts(List.of(new Sort(assignedTo, Direction.DESC)), new Page(0, 20));
         assertThat(browseIds(env, scope, descending)).isEqualTo(List.of(forD, forC));
+    }
+
+    @Test
+    void secondSortKeyBreaksTiesOfTheFirst() {
+        Environment env = freshEnvironment();
+        FieldScope scope = QueryFixtures.taskScope(TENANT);
+
+        // With fixed ids, the id tie-break alone gives [closedLow, closedHigh, openLow, openHigh]. Status ASC
+        // alone and priority DESC alone each give an order other than the expected one, so both keys are used.
+        ObjectId closedLow = seedTaskWithStatus(env, ID_A, "CLOSED", 3);
+        ObjectId closedHigh = seedTaskWithStatus(env, ID_B, "CLOSED", 7);
+        ObjectId openLow = seedTaskWithStatus(env, ID_C, "OPEN", 1);
+        ObjectId openHigh = seedTaskWithStatus(env, ID_D, "OPEN", 9);
+
+        List<Sort> sorts = List.of(
+                new Sort(QueryFixtures.facetPath(scope, "status"), Direction.ASC),
+                new Sort(priorityPath(scope), Direction.DESC));
+
+        assertThat(browseIds(env, scope, withSorts(sorts, new Page(0, 20))))
+                .containsExactly(closedHigh, closedLow, openHigh, openLow);
     }
 
     // -- Soft delete and tenant scope -------------------------------------------------------------
@@ -389,14 +454,24 @@ public abstract class BrowseContract {
         FieldScope scope = QueryFixtures.taskScope(TENANT);
 
         ObjectId id = seedTask(env, BASE, "Soon deleted", "OPEN", 1, FEB_1, null, null);
+        ObjectId visible = seedTask(env, BASE.plusSeconds(1), "Still here", "CLOSED", 2, FEB_2, null, null);
         env.seeder()
                 .seed(ObjectViews.of(
-                        id, TASK_IRI, TENANT, 2, Map.of(TITLE, Value.text("Soon deleted")), BASE.plusSeconds(1), true));
+                        id,
+                        TASK_IRI,
+                        TENANT,
+                        2,
+                        Map.of(TITLE, Value.text("Soon deleted"), STATUS, Value.text("OPEN")),
+                        BASE.plusSeconds(2),
+                        true));
 
-        BrowseResult result = env.browsePort().browse(scope, plain(new Page(0, 20)));
+        FieldPath status = QueryFixtures.facetPath(scope, "status");
+        BrowseResult result = env.browsePort().browse(scope, withFacets(new Page(0, 20), List.of(status)));
 
-        assertThat(result.items()).extracting(ObjectView::id).doesNotContain(id);
-        assertThat(result.total()).isZero();
+        assertThat(result.items()).extracting(ObjectView::id).containsExactly(visible);
+        assertThat(result.total()).isEqualTo(1);
+        // The deleted object's status group is gone too: the only bucket is the visible CLOSED task.
+        assertThat(result.facets().get(status)).containsExactly(new FacetBucket("CLOSED", 1));
     }
 
     @Test
@@ -472,6 +547,21 @@ public abstract class BrowseContract {
         assertThat(result.facets().get(status)).containsExactly(new FacetBucket("OPEN", 1));
     }
 
+    @Test
+    void searchableTraversalFieldDoesNotBreakBrowse() {
+        Environment env = freshEnvironment();
+        // The expansion adds the Project's searchable name to the scope as a traversal Field. Project is
+        // not a candidate type of this scope, and only the root's own searchable Fields are searched.
+        FieldScope expanded = QueryFixtures.taskScopeExpandedToProject(TENANT);
+
+        ObjectId task = seedTask(env, BASE, "Quarterly budget", "OPEN", 1, FEB_1, null, null);
+        seedProject(env, BASE.plusSeconds(1), "Budget project", "ACTIVE");
+
+        assertThat(browseIds(env, expanded, plain(new Page(0, 20)))).containsExactly(task);
+        assertThat(browseIds(env, expanded, textQuery("budget", new Page(0, 20))))
+                .containsExactly(task);
+    }
+
     // -- Facets -----------------------------------------------------------------------------------
 
     @Test
@@ -539,7 +629,7 @@ public abstract class BrowseContract {
         seedTask(env, BASE.plusSeconds(3), "Alice task two", "OPEN", 2, FEB_2, alice, null);
         seedTask(env, BASE.plusSeconds(4), "Bob task", "OPEN", 3, FEB_3, bob, null);
 
-        FieldPath assignedTo = QueryFixtures.relationshipPath(scope, "assignedTo");
+        FieldPath assignedTo = QueryFixtures.facetPath(scope, "assignedTo");
         BrowseResult result = env.browsePort().browse(scope, withFacets(new Page(0, 20), List.of(assignedTo)));
 
         assertThat(result.facets().get(assignedTo))
@@ -558,7 +648,7 @@ public abstract class BrowseContract {
         seedTask(env, BASE.plusSeconds(3), "Bob task one", "OPEN", 2, FEB_2, ID_C, null);
         seedTask(env, BASE.plusSeconds(4), "Bob task two", "OPEN", 3, FEB_3, ID_C, null);
 
-        FieldPath assignedTo = QueryFixtures.relationshipPath(scope, "assignedTo");
+        FieldPath assignedTo = QueryFixtures.facetPath(scope, "assignedTo");
         BrowseResult result = env.browsePort().browse(scope, withFacets(new Page(0, 20), List.of(assignedTo)));
 
         // Id order puts ID_A first, but the count decides: ID_C (2) before ID_A (1).
@@ -579,7 +669,7 @@ public abstract class BrowseContract {
         seedTask(env, BASE.plusSeconds(2), "Bob task", "OPEN", 2, FEB_2, ID_C, null);
         seedTask(env, BASE.plusSeconds(3), "Alice task", "OPEN", 1, FEB_1, ID_A, null);
 
-        FieldPath assignedTo = QueryFixtures.relationshipPath(scope, "assignedTo");
+        FieldPath assignedTo = QueryFixtures.facetPath(scope, "assignedTo");
         BrowseResult result = env.browsePort().browse(scope, withFacets(new Page(0, 20), List.of(assignedTo)));
 
         assertThat(result.facets().get(assignedTo))
@@ -658,7 +748,63 @@ public abstract class BrowseContract {
                 .containsExactly(new FacetBucket("é", 1), new FacetBucket("�", 1), new FacetBucket("😀", 1));
     }
 
+    @Test
+    void orConjunctNarrowsEveryFacetCountWhole() {
+        Environment env = freshEnvironment();
+        FieldScope scope = QueryFixtures.taskScope(TENANT);
+
+        ObjectId openOne = seedTask(env, BASE, "Open one", "OPEN", 1, FEB_1, null, null);
+        // Closed one fails the OR. If the OR were dropped from the count, it would add a CLOSED bucket.
+        seedTask(env, BASE.plusSeconds(1), "Closed one", "CLOSED", 1, FEB_2, null, null);
+        // Closed nine and open nine both fail the priority-is-1 conjunct.
+        seedTask(env, BASE.plusSeconds(2), "Closed nine", "CLOSED", 9, FEB_3, null, null);
+        seedTask(env, BASE.plusSeconds(3), "Open nine", "OPEN", 9, FEB_4, null, null);
+
+        // The OR mentions status but is not a FieldFilter on it, so it is kept whole in the count.
+        FieldPath status = QueryFixtures.facetPath(scope, "status");
+        FilterNode filter = Filters.and(
+                Filters.or(is(STATUS_IRI, text("OPEN")), is(PRIORITY_IRI, number(9))), is(PRIORITY_IRI, number(1)));
+        BrowseQuery query =
+                new BrowseQuery(Optional.of(filter), Optional.empty(), List.of(), new Page(0, 20), List.of(status));
+        BrowseResult result = env.browsePort().browse(scope, query);
+
+        assertThat(result.items()).extracting(ObjectView::id).containsExactly(openOne);
+        assertThat(result.total()).isEqualTo(1);
+        assertThat(result.facets().get(status)).containsExactly(new FacetBucket("OPEN", 1));
+    }
+
+    @Test
+    void referenceFacetDropsMissingAndSoftDeletedTargets() {
+        Environment env = freshEnvironment();
+        FieldScope scope = QueryFixtures.taskScope(TENANT);
+
+        ObjectId alice = seedPerson(env, ObjectId.random(), BASE, "Alice Smith", "alice@example.com");
+        ObjectId carol = ObjectId.random();
+        softDeletePerson(env, carol, BASE.plusSeconds(1), "Carol King", "carol@example.com");
+        ObjectId missing = ObjectId.random(); // a target that is never seeded
+
+        seedTask(env, BASE.plusSeconds(2), "Alice one", "OPEN", 1, FEB_1, alice, null);
+        seedTask(env, BASE.plusSeconds(3), "Alice two", "OPEN", 2, FEB_2, alice, null);
+        seedTask(env, BASE.plusSeconds(4), "Carol task", "OPEN", 3, FEB_3, carol, null);
+        seedTask(env, BASE.plusSeconds(5), "Missing task", "OPEN", 4, FEB_4, missing, null);
+
+        FieldPath assignedTo = QueryFixtures.facetPath(scope, "assignedTo");
+        BrowseResult result = env.browsePort().browse(scope, withFacets(new Page(0, 20), List.of(assignedTo)));
+
+        // The tasks that point at the deleted and the missing target still match. Their buckets are absent.
+        assertThat(result.total()).isEqualTo(4);
+        assertThat(result.facets().get(assignedTo)).containsExactly(new FacetBucket(idText(alice), 2));
+    }
+
     // -- Fixture helpers --------------------------------------------------------------------------
+
+    /** The filter is rejected before anything is read, with at least one problem named. */
+    private static void assertRejectedAsInvalidQuery(Environment env, FieldScope scope, FilterNode filter) {
+        assertThatThrownBy(() -> env.browsePort().browse(scope, filtered(filter, new Page(0, 20))))
+                .isInstanceOfSatisfying(
+                        InvalidQueryException.class,
+                        error -> assertThat(error.problems()).isNotEmpty());
+    }
 
     private static BrowseQuery plain(Page page) {
         return new BrowseQuery(Optional.empty(), Optional.empty(), List.of(), page, List.of());
@@ -777,6 +923,33 @@ public abstract class BrowseContract {
                         STATUS, Value.text("OPEN"),
                         PRIORITY, Value.integer(priority),
                         DUE_DATE, Value.date(FEB_1)));
+    }
+
+    private static ObjectId seedTaskWithStatus(Environment env, ObjectId id, String status, long priority) {
+        return seed(
+                env,
+                id,
+                TASK_IRI,
+                BASE,
+                Map.of(
+                        TITLE,
+                        Value.text("Task " + status + " " + priority),
+                        STATUS,
+                        Value.text(status),
+                        PRIORITY,
+                        Value.integer(priority)));
+    }
+
+    private static void softDeletePerson(Environment env, ObjectId id, Instant createdAt, String name, String email) {
+        env.seeder()
+                .seed(ObjectViews.of(
+                        id,
+                        PERSON_IRI,
+                        TENANT,
+                        2,
+                        Map.of(PERSON_NAME, Value.text(name), PERSON_EMAIL, Value.text(email)),
+                        createdAt,
+                        true));
     }
 
     private static ObjectId seedProject(Environment env, Instant createdAt, String name, String status) {

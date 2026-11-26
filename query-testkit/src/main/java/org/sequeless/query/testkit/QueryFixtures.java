@@ -29,7 +29,9 @@ import org.sequeless.query.field.testfixtures.RelationshipFixture;
 
 /**
  * The scenario the Browse and Index contracts run over: three classes, Task, Project and Person, with
- * the properties and the two walkable relationships the contracts filter, sort, facet and search on.
+ * the properties the contracts filter, sort, facet and search on. Task has one reference property,
+ * {@code assignedTo}, which is an {@code OBJECT_REF} Field, and one walkable relationship,
+ * {@code belongsToProject}, which only expansion reaches.
  * Scopes are resolved through {@link InMemoryFieldSource}, so the Fields are the ones the Field
  * contract produces, not hand-built records.
  */
@@ -113,18 +115,18 @@ final class QueryFixtures {
                                 DUE_DATE_IRI,
                                 "dueDate",
                                 FieldType.DATE,
-                                FILTERABLE_SORTABLE)),
-                List.of(
-                        relationship(
+                                FILTERABLE_SORTABLE),
+                        property(
                                 UUID.fromString("00000000-0000-0000-0000-0000000000e1"),
                                 ASSIGNED_TO_IRI,
                                 "assignedTo",
-                                PERSON),
-                        relationship(
-                                UUID.fromString("00000000-0000-0000-0000-0000000000e2"),
-                                BELONGS_TO_PROJECT_IRI,
-                                "belongsToProject",
-                                PROJECT)));
+                                FieldType.OBJECT_REF,
+                                FILTERABLE_FACETABLE_SORTABLE)),
+                List.of(relationship(
+                        UUID.fromString("00000000-0000-0000-0000-0000000000e2"),
+                        BELONGS_TO_PROJECT_IRI,
+                        "belongsToProject",
+                        PROJECT)));
         ClassFixture project = new ClassFixture(
                 PROJECT_ID,
                 PROJECT,
@@ -227,19 +229,24 @@ final class QueryFixtures {
     }
 
     /**
-     * The FieldPath of a walkable relationship of the scope: one segment that lands on a class.
+     * The Task scope expanded across {@code belongsToProject}. Expansion adds the Project's Fields to the
+     * scope's facets as traversal Fields, so the scope has a multi-segment searchable Field. Its concrete
+     * types stay Task only.
      *
-     * @param scope the scope
-     * @param slug the relationship's slug
-     * @return the path
+     * @param tenant the tenant the scope is resolved for
+     * @return the expanded scope
      */
-    static FieldPath relationshipPath(FieldScope scope, String slug) {
+    static FieldScope taskScopeExpandedToProject(TenantId tenant) {
+        ContractFixture fixture = fixture(tenant);
+        InMemoryFieldSource source = InMemoryFieldSource.from(fixture);
+        FieldScope scope = source.resolve(request(tenant, classRef(fixture, TASK)));
         Relationship relationship = scope.relationships().stream()
-                .filter(candidate -> candidate.slug().equals(slug))
+                .filter(candidate -> candidate.slug().equals("belongsToProject"))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("no relationship named " + slug));
-        return new FieldPath(List.of(new PathSegment(
+                .orElseThrow(() -> new IllegalStateException("no belongsToProject relationship"));
+        FieldPath path = new FieldPath(List.of(new PathSegment(
                 relationship.propertyId(), relationship.iri(), relationship.slug(), relationship.targetClass())));
+        return source.expand(scope, path);
     }
 
     static FieldScope withConcreteTypes(FieldScope scope, Set<ClassRef> concreteTypes) {

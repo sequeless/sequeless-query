@@ -39,6 +39,7 @@ import org.sequeless.query.api.BrowseQuery;
 import org.sequeless.query.api.BrowseResult;
 import org.sequeless.query.api.Direction;
 import org.sequeless.query.api.FacetBucket;
+import org.sequeless.query.api.InvalidQueryException;
 import org.sequeless.query.api.ObjectView;
 import org.sequeless.query.api.PropertyRef;
 import org.sequeless.query.api.Sort;
@@ -54,14 +55,39 @@ import org.sequeless.query.spi.BrowsePort;
  * default order, paging, and the conventional multi-select facet rule, each as {@link BrowsePort}'s
  * javadoc describes them.
  *
- * <p>Filters are evaluated over the operators filter-core's default registry names, on direct
- * properties. Free text requires every query token to occur in the object's searchable text, and
- * ranks by the number of occurrences, best first. The searchable text is the text of the scope's
- * searchable root Fields.
+ * <p>The filter is evaluated over {@code AndFilter}, {@code OrFilter} and {@code FieldFilter} nodes,
+ * on direct properties, with these operators (filter-core's default names, as canonical names):
+ * {@code exists}, {@code does not exist}, {@code is}, {@code is not}, {@code is greater than}, {@code
+ * is greater than or equal to}, {@code is less than}, {@code is less than or equal to}, {@code is
+ * in}, {@code contains} and {@code starts with}.
  *
- * <p>Three things are not evaluated, and fail with {@link UnsupportedOperationException} rather than
- * answering wrongly: traversal paths (more than one segment), {@code AnyFilter}, and the list-valued
- * operators and orderings. No contract clause needs them.
+ * <p>Free text requires every query token to occur in the searchable text of the object, and ranks
+ * by the number of occurrences, best first. The searchable text is read from the root's own
+ * searchable Fields: the single-segment Fields of the scope that are {@code searchable}. A traversal
+ * Field that an expansion added to the scope is not searched. A property that is searchable only on
+ * a concrete subtype is not searched either (spec 14, Q22).
+ *
+ * <p>Before any object is read, the query is checked, and every problem is reported together in one
+ * {@link InvalidQueryException} (spec 14, Q23). The query is rejected when it names:
+ *
+ * <ul>
+ *   <li>a filter node other than {@code AndFilter}, {@code OrFilter} or {@code FieldFilter}, such as
+ *       {@code AnyFilter};
+ *   <li>a {@code FieldFilter} on a traversal path (more than one segment, keyed with {@code |});
+ *   <li>an operator outside the evaluated list above, such as {@code like} and {@code not like}, or
+ *       one that filter-core does not know;
+ *   <li>a sort key or a facet path that is a traversal path.
+ * </ul>
+ *
+ * <p>Two things are not evaluated for the values they hold, and fail with {@link
+ * UnsupportedOperationException} when a stored value of that kind is compared, sorted or bucketed:
+ * list-valued properties, and any value kind the reference does not compare. No contract clause
+ * needs them. An operand whose JSON type does not fit the stored value, or an {@code is in} operand
+ * that is not an array, fails with {@link IllegalArgumentException}.
+ *
+ * <p>Reference values bucket by their target's id text, and a bucket counts only a target that is
+ * visible in the tenant: stored and not soft-deleted. A missing or soft-deleted target contributes
+ * to no bucket (spec 14, Q21).
  *
  * <p>Ids, and reference values used as sort keys or facet keys, compare in {@link BrowsePort}'s
  * unsigned order (see {@code compareIds}), never by the signed {@link UUID#compareTo}.
@@ -70,6 +96,20 @@ public final class InMemoryBrowsePort implements BrowsePort {
 
     private static final Pattern NON_WORD = Pattern.compile("[^\\p{L}\\p{N}]+");
     private static final OperatorRegistry OPERATORS = OperatorRegistry.defaults();
+
+    /** The canonical operator names this port evaluates. Any other operator is rejected before a read. */
+    private static final Set<String> EVALUATED_OPERATORS = Set.of(
+            "exists",
+            "does not exist",
+            "is",
+            "is not",
+            "is greater than",
+            "is greater than or equal to",
+            "is less than",
+            "is less than or equal to",
+            "is in",
+            "contains",
+            "starts with");
 
     private static final Comparator<ObjectView> CREATED_AT_THEN_ID = Comparator.comparing(
                     (ObjectView view) -> view.audit().createdAt())
@@ -91,6 +131,7 @@ public final class InMemoryBrowsePort implements BrowsePort {
     public BrowseResult browse(FieldScope scope, BrowseQuery query) {
         Objects.requireNonNull(scope, "scope must not be null");
         Objects.requireNonNull(query, "query must not be null");
+        rejectUnsupportedShapes(query);
 
         Scan scan = new Scan(scope, query, store.all());
         List<ObjectView> ordered = scan.matching(Optional.empty()).stream()
@@ -109,13 +150,15 @@ public final class InMemoryBrowsePort implements BrowsePort {
     }
 
     /**
-     * One browse's inputs, with the candidate objects and the searchable properties worked out once:
-     * tenant, not soft-deleted, and a type in {@link FieldScope#concreteTypes()}.
+     * One browse's inputs, with the candidate objects, the visible targets and the searchable
+     * properties worked out once: tenant, not soft-deleted, and (for candidates) a type in {@link
+     * FieldScope#concreteTypes()}.
      */
     private static final class Scan {
 
         private final BrowseQuery query;
         private final List<ObjectView> candidates;
+        private final Set<ObjectId> visibleTargets;
         private final List<String> searchableIris;
         private final List<String> queryTokens;
 
@@ -124,13 +167,19 @@ public final class InMemoryBrowsePort implements BrowsePort {
             TenantId tenant = scope.request().tenantId();
             Set<String> types =
                     scope.concreteTypes().stream().map(ClassRef::iri).collect(Collectors.toSet());
-            this.candidates = stored.stream()
+            List<ObjectView> visible = stored.stream()
                     .filter(view -> view.tenant().equals(tenant))
                     .filter(view -> !view.deleted())
+                    .toList();
+            this.candidates = visible.stream()
                     .filter(view -> types.contains(view.type().iri()))
                     .toList();
+            this.visibleTargets = visible.stream().map(ObjectView::id).collect(Collectors.toSet());
+            // A traversal Field has more than one segment. Expansion adds those to the scope, and they are not root
+            // Fields.
             this.searchableIris = scope.facets().stream()
                     .filter(field -> field.capabilities().searchable())
+                    .filter(field -> field.path().segments().size() == 1)
                     .map(field -> iriOf(field.path()))
                     .toList();
             this.queryTokens = query.text().map(InMemoryBrowsePort::tokens).orElse(List.of());
@@ -168,7 +217,7 @@ public final class InMemoryBrowsePort implements BrowsePort {
             Map<String, Long> counts = new HashMap<>();
             for (ObjectView view : matching(Optional.of(iri))) {
                 Value value = view.properties().get(property);
-                if (value != null) {
+                if (value != null && isVisibleTarget(value)) {
                     counts.merge(lexical(value), 1L, Long::sum);
                 }
             }
@@ -178,6 +227,11 @@ public final class InMemoryBrowsePort implements BrowsePort {
                             .reversed()
                             .thenComparing(FacetBucket::value, InMemoryBrowsePort::compareByCodePoint))
                     .toList();
+        }
+
+        /** A reference counts only when its target is visible in the tenant; any other value always counts. */
+        private boolean isVisibleTarget(Value value) {
+            return !(value instanceof ReferenceValue reference) || visibleTargets.contains(reference.target());
         }
 
         private boolean passes(ObjectView view, Optional<String> excludedKey) {
@@ -192,7 +246,7 @@ public final class InMemoryBrowsePort implements BrowsePort {
                 return matches(filter, view);
             }
             // A filter that is not an AndFilter is one conjunct. A FieldFilter on the excluded path is
-            // removed, which leaves match-all.
+            // removed, which leaves match-all. Every other conjunct is kept whole.
             for (FilterNode conjunct : conjuncts(filter)) {
                 if (conjunct instanceof FieldFilter field && field.path().equals(excludedKey.get())) {
                     continue;
@@ -227,6 +281,53 @@ public final class InMemoryBrowsePort implements BrowsePort {
         }
     }
 
+    /**
+     * Rejects, with one {@link InvalidQueryException} that lists every problem, each shape this port
+     * does not evaluate. Nothing is read when the query is rejected.
+     */
+    private static void rejectUnsupportedShapes(BrowseQuery query) {
+        List<String> problems = new ArrayList<>();
+        query.filter().ifPresent(filter -> collectFilterProblems(filter, problems));
+        for (Sort sort : query.sorts()) {
+            collectPathProblem(sort.path(), "sort", problems);
+        }
+        for (FieldPath facet : query.facets()) {
+            collectPathProblem(facet, "facet", problems);
+        }
+        if (!problems.isEmpty()) {
+            throw new InvalidQueryException(problems);
+        }
+    }
+
+    private static void collectFilterProblems(FilterNode node, List<String> problems) {
+        switch (node) {
+            case AndFilter and -> and.operands().forEach(operand -> collectFilterProblems(operand, problems));
+            case OrFilter or -> or.operands().forEach(operand -> collectFilterProblems(operand, problems));
+            case FieldFilter field -> collectFieldFilterProblems(field, problems);
+            default -> problems.add(node.getClass().getSimpleName() + " is not evaluated by the in-memory browse port");
+        }
+    }
+
+    private static void collectFieldFilterProblems(FieldFilter filter, List<String> problems) {
+        if (filter.path().contains("|")) {
+            problems.add("traversal path " + filter.path() + " is not evaluated by the in-memory browse port");
+        }
+        Optional<OperatorDefinition> operator = OPERATORS.findByCanonicalOrAlias(filter.op());
+        if (operator.isEmpty()) {
+            problems.add("unknown operator '" + filter.op() + "'");
+        } else if (!EVALUATED_OPERATORS.contains(operator.get().getCanonicalName())) {
+            problems.add("operator '" + operator.get().getCanonicalName()
+                    + "' is not evaluated by the in-memory browse port");
+        }
+    }
+
+    private static void collectPathProblem(FieldPath path, String role, List<String> problems) {
+        if (path.segments().size() != 1) {
+            problems.add(role + " on traversal path " + path.asSlugPath()
+                    + " is not evaluated by the in-memory browse port");
+        }
+    }
+
     /** Ascending puts a missing value last and descending puts it first. */
     private static Comparator<ObjectView> sortBy(Sort sort) {
         PropertyRef property = new PropertyRef(iriOf(sort.path()));
@@ -241,9 +342,7 @@ public final class InMemoryBrowsePort implements BrowsePort {
             case AndFilter and -> and.operands().stream().allMatch(operand -> matches(operand, view));
             case OrFilter or -> or.operands().stream().anyMatch(operand -> matches(operand, view));
             case FieldFilter field -> fieldMatches(field, view);
-            default ->
-                throw new UnsupportedOperationException(
-                        "the in-memory browse port does not evaluate this filter node: " + node);
+            default -> throw new IllegalStateException("filter node was not checked before the read: " + node);
         };
     }
 
@@ -251,8 +350,9 @@ public final class InMemoryBrowsePort implements BrowsePort {
         return node instanceof AndFilter and ? and.operands() : List.of(node);
     }
 
+    /** The FieldFilter's path is a direct property IRI: traversal paths were rejected before the read. */
     private static boolean fieldMatches(FieldFilter filter, ObjectView view) {
-        Value actual = view.properties().get(new PropertyRef(singleIri(filter.path())));
+        Value actual = view.properties().get(new PropertyRef(filter.path()));
         String operator = canonicalOperator(filter.op());
         return switch (operator) {
             case "exists" -> actual != null;
@@ -268,9 +368,7 @@ public final class InMemoryBrowsePort implements BrowsePort {
                 actual instanceof TextValue text && lower(text.value()).contains(lower(text(filter.value())));
             case "starts with" ->
                 actual instanceof TextValue text && lower(text.value()).startsWith(lower(text(filter.value())));
-            default ->
-                throw new UnsupportedOperationException(
-                        "the in-memory browse port does not evaluate the operator '" + operator + "'");
+            default -> throw new IllegalStateException("operator was not checked before the read: " + operator);
         };
     }
 
@@ -398,21 +496,15 @@ public final class InMemoryBrowsePort implements BrowsePort {
         return json.decimalValue();
     }
 
-    /** The direct property a single-segment path names. */
+    /**
+     * The direct property a single-segment path names. Traversal paths are rejected before a read, so
+     * a multi-segment path reaching here is a bug in this class, and it fails rather than guessing.
+     */
     private static String iriOf(FieldPath path) {
         if (path.segments().size() != 1) {
-            throw new UnsupportedOperationException(
-                    "the in-memory browse port evaluates direct paths only: " + path.asSlugPath());
+            throw new IllegalStateException("the in-memory browse port reads direct paths only: " + path.asSlugPath());
         }
         return path.segments().get(0).iri();
-    }
-
-    /** The property a FieldFilter path names; a traversal key carries {@code |} and is not evaluated. */
-    private static String singleIri(String key) {
-        if (key.contains("|")) {
-            throw new UnsupportedOperationException("the in-memory browse port evaluates direct paths only: " + key);
-        }
-        return key;
     }
 
     private static List<String> tokens(String text) {
