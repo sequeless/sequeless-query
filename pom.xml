@@ -2,7 +2,7 @@
 <!--
   Aggregator only. Never released or deployed (spec 2, §1 and §6).
   Modules take their parent from sequeless-build-parent, not from this POM, so the
-  repository entry and the junit-bom import are repeated in template-core/pom.xml.
+  repository entry and the junit-bom import are repeated in query-core/pom.xml.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -10,18 +10,21 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.sequeless</groupId>
-  <artifactId>sequeless-template</artifactId>
+  <artifactId>sequeless-query</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>sequeless-template</name>
-  <description>Placeholder repo: copy this to start a new Sequeless repo.</description>
+  <name>sequeless-query</name>
+  <description>Query side aggregator: field contract, browse, read and index preparation</description>
 
   <properties>
+    <maven.compiler.release>25</maven.compiler.release>
     <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
 
   <modules>
-    <module>template-core</module>
+    <module>query-field</module>
+    <module>query-field-testfixtures</module>
+    <module>query-core</module>
   </modules>
 
   <repositories>
