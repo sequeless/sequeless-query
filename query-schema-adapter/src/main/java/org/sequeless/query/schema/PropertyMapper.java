@@ -120,7 +120,7 @@ final class PropertyMapper {
      * a {@link org.sequeless.query.field.api.FieldConflict} is keyed by ontology version, and this
      * disagreement is between types of one version, so it would misstate what the conflict is.
      */
-    private Field unionField(List<PropertyDefinition> group) {
+    Field unionField(List<PropertyDefinition> group) {
         PropertyDefinition first = group.get(0);
         if (agree(group)) {
             return field(path(first), first, capabilities(group));
@@ -142,7 +142,7 @@ final class PropertyMapper {
     }
 
     /** Whether every definition of one property matches the first one in kind, datatype or target, and cardinality. */
-    private static boolean agree(List<PropertyDefinition> group) {
+    static boolean agree(List<PropertyDefinition> group) {
         PropertyDefinition first = group.get(0);
         return group.stream().allMatch(other -> sameDefinition(first, other));
     }
@@ -158,6 +158,21 @@ final class PropertyMapper {
                         && relationship.targetTypeIri().equals(other.targetTypeIri())
                         && relationship.cardinality().equals(other.cardinality());
         };
+    }
+
+    /**
+     * The definitions, across the covered types, of the property a root-hop segment names: the same group
+     * {@link #unionFields} makes for it. Empty when no covered type declares the property.
+     *
+     * @param covered the root and its transitive subtypes, as {@link SchemaView#typeAndSubtypes} returns them
+     * @param segment a segment of a path rooted at the covered root
+     * @return the definitions of that property, in first-declared order, or empty
+     */
+    List<PropertyDefinition> groupNamed(List<TypeDefinition> covered, PathSegment segment) {
+        return groupByIri(covered).stream()
+                .filter(group -> Iris.id(group.get(0).iri()).equals(segment.propertyId()))
+                .findFirst()
+                .orElse(List.of());
     }
 
     /** The property definitions of the covered types, grouped by property IRI, in first-declared order. */

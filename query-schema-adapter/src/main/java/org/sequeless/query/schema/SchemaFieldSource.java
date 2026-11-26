@@ -122,33 +122,43 @@ public final class SchemaFieldSource implements FieldSource {
         requireActiveVersion(view, request.versionPolicy());
         PropertyMapper mapper = new PropertyMapper(view);
         PathWalk walk = new PathWalk(view, root, request.traversal(), path);
+        List<TypeDefinition> covered = view.typeAndSubtypes(root);
 
         List<PathSegment> segments = path.segments();
         int last = segments.size() - 1;
         for (int index = 0; index <= last; index++) {
             PathSegment segment = segments.get(index);
             boolean terminal = index == last;
-            PropertyDefinition property = walk.find(segment)
-                    .orElseThrow(() -> terminal
-                            ? new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, path)
-                            : new FieldResolutionException(
-                                    FieldErrorCode.CLASS_NOT_REACHABLE, path, segment.targetClass()));
-            if (!terminal && !(property instanceof RelationshipDefinition)) {
+            // The root hop reads the same definitions resolve reads (spec 17), so describe and resolve return the
+            // same Field for a root's property. A deeper hop reads only the class the walk has entered.
+            List<PropertyDefinition> definitions = index == 0
+                    ? mapper.groupNamed(covered, segment)
+                    : walk.find(segment).stream().toList();
+            if (definitions.isEmpty()) {
+                throw terminal
+                        ? new FieldResolutionException(FieldErrorCode.UNKNOWN_PATH, path)
+                        : new FieldResolutionException(FieldErrorCode.CLASS_NOT_REACHABLE, path, segment.targetClass());
+            }
+            PropertyDefinition property = definitions.get(0);
+            // Definitions that disagree name no single kind or target, so no route can be walked through them.
+            boolean walkable = PropertyMapper.agree(definitions) && property instanceof RelationshipDefinition;
+            if (!terminal && !walkable) {
                 throw new FieldResolutionException(FieldErrorCode.CLASS_NOT_REACHABLE, path, segment.targetClass());
             }
-            // Only a hop that walks into a relationship is guarded; the terminal segment is never walked into.
-            if (!terminal && property instanceof RelationshipDefinition relationship) {
+            if (!terminal) {
+                // Only a hop that walks into a relationship is guarded; the terminal segment is never walked into.
+                RelationshipDefinition relationship = (RelationshipDefinition) property;
                 walk.checkRevisit(view.targetRef(relationship.targetTypeIri()));
                 walk.checkDepth(index);
                 walk.enter(relationship);
+                continue;
             }
-            if (terminal) {
-                Field field = mapper.field(path, property);
-                if (!field.capabilities().filterable()) {
-                    throw new FieldResolutionException(FieldErrorCode.PATH_NOT_FILTERABLE, path);
-                }
-                return field;
+            // A disagreeing root property is listed with every capability false, so it is refused here as well.
+            Field field = index == 0 ? mapper.unionField(definitions) : mapper.field(path, property);
+            if (!field.capabilities().filterable()) {
+                throw new FieldResolutionException(FieldErrorCode.PATH_NOT_FILTERABLE, path);
             }
+            return field;
         }
         // Unreachable: FieldPath's constructor guarantees at least one segment, so the terminal hop returns.
         throw new IllegalStateException("path must have at least one segment");

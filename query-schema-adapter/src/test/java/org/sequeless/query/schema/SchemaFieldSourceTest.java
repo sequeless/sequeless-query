@@ -731,6 +731,127 @@ class SchemaFieldSourceTest {
         assertThat(scope.relationships()).isEmpty();
     }
 
+    @Test
+    void describeOfASubtypeOnlyPropertyRootedAtAnAbstractSupertypeReturnsItsField() {
+        FieldSource source = source(schema(
+                1,
+                type("Work", true, List.of()),
+                type(
+                        "Task",
+                        false,
+                        List.of("Work"),
+                        attribute(
+                                "priority",
+                                Datatype.INTEGER,
+                                org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                true,
+                                true))));
+
+        Field field = source.describe(request("Work"), path(segment("priority", null)));
+
+        assertThat(field.type()).isEqualTo(FieldType.INTEGER);
+        assertThat(field.capabilities()).isEqualTo(new Capabilities(true, true, true, true));
+    }
+
+    @Test
+    void describeAndResolveReturnEqualFieldsForAnAgreeingPropertyAndForASubtypeOnlyProperty() {
+        FieldSource source = source(schema(
+                1,
+                type(
+                        "Work",
+                        true,
+                        List.of(),
+                        attribute(
+                                "status",
+                                Datatype.STRING,
+                                org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                true,
+                                true)),
+                type(
+                        "Task",
+                        false,
+                        List.of("Work"),
+                        attribute(
+                                "status",
+                                Datatype.STRING,
+                                org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                true,
+                                true),
+                        attribute(
+                                "priority",
+                                Datatype.INTEGER,
+                                org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                true,
+                                true))));
+        FieldScope scope = source.resolve(request("Work"));
+
+        assertThat(source.describe(request("Work"), path(segment("status", null))))
+                .isEqualTo(facetNamed(scope, "status"));
+        assertThat(source.describe(request("Work"), path(segment("priority", null))))
+                .isEqualTo(facetNamed(scope, "priority"));
+    }
+
+    @Test
+    void describeWalksASubtypeOnlyRelationshipAtTheRootHop() {
+        FieldSource source = source(schema(
+                1,
+                type("Work", true, List.of()),
+                type("Task", false, List.of("Work"), relationship("assignee", "Person")),
+                concreteType("Person", attribute("name", Datatype.STRING, true, true))));
+
+        Field field = source.describe(request("Work"), path(segment("assignee", "Person"), segment("name", null)));
+
+        assertThat(field.path().asSlugPath()).isEqualTo("assignee.name");
+        assertThat(field.type()).isEqualTo(FieldType.STRING);
+    }
+
+    @Test
+    void describeOfADisagreeingPropertyIsRefusedAndPicksNoDefinition() {
+        // Same conflict as subtypesThatDisagreeOnCardinality...: describe must not hand back either definition.
+        FieldSource source = source(schema(
+                1,
+                type("Work", true, List.of()),
+                type(
+                        "A",
+                        false,
+                        List.of("Work"),
+                        attribute(
+                                "status",
+                                Datatype.STRING,
+                                org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                true,
+                                true)),
+                type(
+                        "B",
+                        false,
+                        List.of("Work"),
+                        attribute(
+                                "status",
+                                Datatype.STRING,
+                                org.sequeless.ontology.schema.api.Cardinality.optional(),
+                                true,
+                                true))));
+
+        assertCode(
+                () -> source.describe(request("Work"), path(segment("status", null))),
+                FieldErrorCode.PATH_NOT_FILTERABLE);
+    }
+
+    @Test
+    void aDisagreeingRelationshipIsNotWalkedAtTheRootHop() {
+        FieldSource source = source(schema(
+                1,
+                type("Work", true, List.of()),
+                type("A", false, List.of("Work"), relationship("owner", "Person")),
+                type("B", false, List.of("Work"), relationship("owner", "Company")),
+                concreteType("Person", attribute("name", Datatype.STRING, true, true)),
+                concreteType("Company", attribute("name", Datatype.STRING, true, true))));
+
+        assertCode(
+                () -> source.describe(request("Work"), path(segment("owner", "Person"), segment("name", null))),
+                FieldErrorCode.CLASS_NOT_REACHABLE);
+    }
+
     private static FieldSource source(Schema schema) {
         return new SchemaFieldSource(new FakeSchemaSource(Map.of(TENANT, schema)));
     }
