@@ -1,1 +1,1 @@
-{"query-core":"0.2.1","query-field":"0.1.1","query-field-testfixtures":"0.2.0","query-postgres-jsonb-adapter":"0.2.1","query-schema-adapter":"0.2.2","query-spring-boot-autoconfig":"0.2.2","query-testkit":"0.2.1"}
+{"query-core":"0.2.1","query-field":"0.1.1","query-field-testfixtures":"0.2.0","query-postgres-jsonb-adapter":"0.2.1","query-schema-adapter":"0.2.2","query-spring-boot-autoconfig":"0.3.0","query-testkit":"0.2.1"}
