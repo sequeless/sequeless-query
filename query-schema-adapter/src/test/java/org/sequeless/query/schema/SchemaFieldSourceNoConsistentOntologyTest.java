@@ -1,6 +1,7 @@
 package org.sequeless.query.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.sequeless.query.schema.SchemaFixtures.OTHER_TENANT;
 import static org.sequeless.query.schema.SchemaFixtures.TENANT;
@@ -53,6 +54,8 @@ class SchemaFieldSourceNoConsistentOntologyTest {
         AtomicBoolean consistent = new AtomicBoolean(true);
         FieldSource source = source(consistent);
         FieldScope scope = source.resolve(PERSON);
+        assertThatCode(() -> source.expand(scope, path(segment("employer", "Company"))))
+                .doesNotThrowAnyException();
 
         consistent.set(false);
 

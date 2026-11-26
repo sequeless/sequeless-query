@@ -54,7 +54,7 @@
       <artifactId>schema-contract</artifactId>
       <version>${schema-contract.version}</version>
       <exclusions>
-        <!-- schema-contract pins its own kernel-identity. This module declares 0.1.1, the version query-field uses, so the pinned one is excluded to keep the tree convergent. -->
+        <!-- schema-contract 0.2.0 also pins kernel-identity 0.1.1. The exclusion keeps this module's declared version authoritative if schema-contract moves ahead. -->
         <exclusion>
           <groupId>org.sequeless</groupId>
           <artifactId>kernel-identity</artifactId>

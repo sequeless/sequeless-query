@@ -169,7 +169,9 @@ public final class SchemaFieldSource implements FieldSource {
         try {
             schema = schemaSource.schema(tenant);
         } catch (NoConsistentOntologyException error) {
-            throw new FieldResolutionException(FieldErrorCode.UNKNOWN_TENANT);
+            FieldResolutionException unknown = new FieldResolutionException(FieldErrorCode.UNKNOWN_TENANT);
+            unknown.initCause(error);
+            throw unknown;
         }
         return new SchemaView(schema);
     }
