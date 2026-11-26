@@ -2,23 +2,16 @@ package org.sequeless.query.postgres;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
 import org.sequeless.filter.sql.api.SqlFragment;
-import org.sequeless.kernel.identity.TenantId;
-import org.sequeless.kernel.values.ObjectId;
-import org.sequeless.query.api.Audit;
 import org.sequeless.query.api.BrowseQuery;
 import org.sequeless.query.api.BrowseResult;
 import org.sequeless.query.api.FacetBucket;
 import org.sequeless.query.api.ObjectView;
-import org.sequeless.query.api.TypeRef;
 import org.sequeless.query.field.api.FieldPath;
 import org.sequeless.query.field.api.FieldScope;
 import org.sequeless.query.spi.BrowsePort;
@@ -46,10 +39,6 @@ import org.springframework.transaction.support.TransactionTemplate;
  * snapshot and the total agrees with the items. The browse never writes.
  */
 public final class PostgresBrowsePort implements BrowsePort {
-
-    private static final String ITEM_COLUMNS =
-            "id, tenant_id, type_iri, version, state, props, created_at, created_by, "
-                    + "updated_at, updated_by, deleted_at";
 
     private final JdbcClient jdbcClient;
     private final TransactionTemplate transactionTemplate;
@@ -108,10 +97,10 @@ public final class PostgresBrowsePort implements BrowsePort {
         itemParameters.add(query.page().size());
         itemParameters.add((long) query.page().number() * query.page().size());
         List<ObjectView> items = jdbcClient
-                .sql("SELECT " + ITEM_COLUMNS + " FROM sq_object WHERE " + matching.sql() + " ORDER BY " + order.sql()
-                        + " LIMIT ? OFFSET ?")
+                .sql("SELECT " + ObjectViewRowMapper.COLUMNS + " FROM sq_object WHERE " + matching.sql() + " ORDER BY "
+                        + order.sql() + " LIMIT ? OFFSET ?")
                 .params(itemParameters)
-                .query(PostgresBrowsePort::toView)
+                .query(ObjectViewRowMapper::toView)
                 .list();
 
         Map<FieldPath, List<FacetBucket>> facets = new LinkedHashMap<>();
@@ -129,23 +118,6 @@ public final class PostgresBrowsePort implements BrowsePort {
         Map<FieldPath, List<FacetBucket>> result = new LinkedHashMap<>();
         facets.forEach(facet -> result.put(facet, List.of()));
         return result;
-    }
-
-    private static ObjectView toView(ResultSet row, int rowNum) throws SQLException {
-        Audit audit = new Audit(
-                row.getObject("created_at", OffsetDateTime.class).toInstant(),
-                row.getString("created_by"),
-                row.getObject("updated_at", OffsetDateTime.class).toInstant(),
-                row.getString("updated_by"));
-        return new ObjectView(
-                new ObjectId(row.getObject("id", UUID.class)),
-                new TypeRef(row.getString("type_iri")),
-                new TenantId(row.getString("tenant_id")),
-                row.getLong("version"),
-                Optional.ofNullable(row.getString("state")),
-                ValueJsonDecoder.decode(row.getString("props")),
-                audit,
-                row.getObject("deleted_at") != null);
     }
 
     private static FacetBucket toBucket(ResultSet row, int rowNum) throws SQLException {
