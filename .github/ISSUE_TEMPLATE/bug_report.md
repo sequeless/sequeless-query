@@ -23,7 +23,7 @@ A clear, concise description of the bug.
 ## Environment
 
 - Sequeless version / commit:
-- Java / Node / OS:
+- Java / OS:
 
 ## Verification artifacts
 

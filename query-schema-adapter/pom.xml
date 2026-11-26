@@ -14,7 +14,7 @@
   <artifactId>query-schema-adapter</artifactId>
   <version>0.2.3</version>
   <name>query-schema-adapter</name>
-  <description>Schema to Field adapter: the only module that depends on schema-contract</description>
+  <description>Schema to Field adapter: builds Fields from the schema contract</description>
 
   <properties>
     <!-- The deploy URL is built from this name; it must name this repository (the parent defaults to sequeless-build). -->

@@ -5,18 +5,17 @@
 Requires JDK 25. The Maven wrapper (`./mvnw`) is committed, so no local Maven install is needed.
 The devcontainer (`.devcontainer/`) provides a ready JDK 25 toolchain.
 
-Library modules build with `--release 21` through the `sequeless-build` parent. The build JDK is
-always 25 (#17 §1). Maven reads the `github` package registry, so a read token is needed:
+Library modules build with `--release 25`. Each module takes its parent from `sequeless-build-parent`.
+Maven reads the `github` package registry, so a read token is needed:
 
 ```bash
-export PACKAGES_READ_TOKEN=<PAT with read:packages>   # locally; CI reads the org secret
+export GITHUB_PACKAGES_TOKEN=<PAT with read:packages>   # locally; CI reads the org secret
 make verify    # confirm a green baseline
 ```
 
-Your `~/.m2/settings.xml` needs a `github` server entry (`server-id: github`) with the same PAT.
+Your `~/.m2/settings.xml` needs a `github` server entry (`server-id: github`). Set its password to `${env.GITHUB_PACKAGES_TOKEN}`.
 
-Until `sequeless-build` makes its first release, the parent, the reusable workflows and the
-Renovate preset cannot resolve. CI is expected to be red until then.
+CI runs the reusable workflows from `sequeless-build`, pinned to `workflows-v0.1.3`.
 
 There are no local git hooks. Conventional Commits are checked in CI, not on commit.
 
@@ -38,7 +37,7 @@ changelogs from these titles. Never hand-edit a `CHANGELOG.md`.
 ## Recording a decision (ADR)
 
 `make new-adr title="Short title"` scaffolds the next-numbered record under `docs/adr/`. Fill in
-Context, Decision and Consequences. ADRs are immutable: supersede with a new one instead of editing.
+Context, Decision and Consequences. Do not change an accepted ADR's decision. To change a decision, write a new ADR and set the old ADR's Status to `superseded by` the new one.
 
 ## Quality gates
 
@@ -48,9 +47,7 @@ ban on core modules), and ArchUnit (boundaries) all run in `make verify`. CodeQL
 ## Coverage (JaCoCo) convention
 
 JaCoCo instrumentation runs on `verify`, but the line-coverage `check` (`jacoco-check`
-execution) is **off by default** (`jacoco.check.skip=true` in `pom.xml`) — this repo has
-**not yet opted in**. A project opts in once it carries settled production logic by flipping
-the properties in `pom.xml`:
+execution) is **off by default**. This repo has **not yet opted in**. A module opts in once it carries settled production logic. Set these properties in that module's `pom.xml`:
 
 ```xml
 <properties>
@@ -59,5 +56,4 @@ the properties in `pom.xml`:
 </properties>
 ```
 
-Set `jacoco.line.min` from the module's actually-measured coverage (see the report under
-`filter-core/target/site/jacoco/`), and ratchet it up over time rather than guessing a threshold now.
+Set `jacoco.line.min` from the module's measured coverage (see `target/site/jacoco/` in that module), and ratchet it up over time rather than guessing a threshold now.

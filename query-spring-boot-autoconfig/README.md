@@ -10,7 +10,7 @@ Spring Boot autoconfiguration of the Query side. It is thin wiring: it builds th
 
 `QueryAutoConfiguration` registers nothing without both a `SchemaSource` bean and a `DataSource` bean. `QueryService` needs only the `SchemaSource` and the four Query beans, which a host may supply itself. Every bean backs off when the host defines a bean of its type, so a host can supply its own. The adapters use the host's `PlatformTransactionManager` when it defines one, and otherwise a `DataSourceTransactionManager` over the same `DataSource`.
 
-The `sequeless.query.*` configuration prefix is reserved for this module. It has no keys in 0.1.0, and no `@ConfigurationProperties` class reads it.
+The `sequeless.query.*` configuration prefix is reserved for this module. It has no keys, and no `@ConfigurationProperties` class reads it.
 
 ## Ordering
 
