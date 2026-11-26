@@ -25,7 +25,9 @@ public final class FieldResolutionException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
+    /** Why resolution failed; never {@code null}. */
     private final FieldErrorCode code;
+
     private final transient Optional<FieldPath> path;
     private final transient Optional<ClassRef> classRef;
 
