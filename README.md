@@ -21,6 +21,8 @@ sequeless-query is the Query side of Sequeless, which provides Browse, Read, and
 | Index preparation | The creation of the index structures that Browse and Read use. The host calls `QueryService.prepare` after each ontology version becomes active. |
 | Ontology version | A version of an ontology. The `OntologyVersionRef` type holds its number, which is 1 or greater. |
 | Principal | The identity of the requester. It comes from kernel-identity, and it holds an identifier and a set of roles. |
+| Concept scheme | A shared vocabulary of concepts. It is not tenant-owned. A Field can name 1 scheme, and `ConceptSource` reads its concepts. |
+| Merge conflict | A disagreement on the `FieldType` or `Cardinality` of 1 property between versions in scope. The Field carries a `FieldConflict`. |
 | Port | An interface that connects the core to other code. The 3 Query ports are `BrowsePort`, `ReadPort`, and `IndexPreparationPort`. |
 | Adapter | A class that implements a port. |
 
@@ -307,11 +309,119 @@ The `VersionPolicy` of the request decides how `FieldSource` reconciles ontology
 
 Every `FieldSource` error is a `FieldResolutionException` that carries a `FieldErrorCode`. The enum has 12 constants. `ConceptSource` has the methods `concepts` and `concept`. It throws only `SCHEME_UNAVAILABLE`.
 
+#### Concept values
+
+A Field can take its values from a concept scheme. A concept scheme is a shared vocabulary of concepts. A host picker lists these concepts so that a user can choose a filter value.
+
+`ConceptSource` is a separate port. A concept scheme publishes on its own schedule. A new concept can become filterable without an ontology release. If a Field held the values, it would cache a stale snapshot of the vocabulary.
+
+`ConceptSource` is in the package `org.sequeless.query.field.spi`. It takes no `TenantId`, because a concept scheme is not tenant-owned schema.
+
+| Method | Returns | Purpose |
+|---|---|---|
+| `concepts(String schemeId, ConceptQuery query)` | `List<Concept>` | Lists the concepts of the scheme that match the query. |
+| `concept(String schemeId, String conceptIri)` | `Optional<Concept>` | Reads 1 concept by IRI. The result is empty when the scheme does not contain the IRI. |
+
+Both methods throw `FieldResolutionException` with the code `SCHEME_UNAVAILABLE` only. The 3 value records are in the package `org.sequeless.query.field.api`:
+
+| Type | Components | What each component does |
+|---|---|---|
+| `ConceptQuery` | `String partialText` | Matches the preferred and alternative labels. A `null` value means no text filter. |
+| | `Optional<String> parentIri` | A present value lists the children of that concept. This is tree mode. |
+| | `Optional<Locale> locale` | Selects the labels. |
+| | `int limit` | Caps the result, so a picker always pages. |
+| `Concept` | `String iri` | Identifies the concept. |
+| | `LocalizedText prefLabel` | Holds the preferred label. |
+| | `List<LocalizedText> altLabels` | Holds the alternative labels. |
+| | `Optional<String> broaderIri` | Names the parent concept. It is empty for a top-level concept or a flat scheme. |
+| | `boolean hasNarrower` | Lets a tree picker draw an expand arrow without another query. |
+| `ConceptSchemeRef` | `String schemeId` | Identifies the scheme. It is stable and not pinned to a version. |
+| | `String slug` | Names the scheme. |
+| | `boolean hierarchical` | Enables subtree operators, such as "is under", on the facet. |
+
+`Field.conceptScheme()` returns `Optional<ConceptSchemeRef>`.
+
+```mermaid
+classDiagram
+    class ConceptSource {
+        <<interface>>
+        concepts(String schemeId, ConceptQuery query) List~Concept~
+        concept(String schemeId, String conceptIri) Optional~Concept~
+    }
+    class ConceptQuery {
+        String partialText
+        Optional~String~ parentIri
+        Optional~Locale~ locale
+        int limit
+    }
+    class Concept {
+        String iri
+        LocalizedText prefLabel
+        List~LocalizedText~ altLabels
+        Optional~String~ broaderIri
+        boolean hasNarrower
+    }
+    class ConceptSchemeRef {
+        String schemeId
+        String slug
+        boolean hierarchical
+    }
+    class Field {
+        Optional~ConceptSchemeRef~ conceptScheme
+    }
+
+    Field --> ConceptSchemeRef : conceptScheme
+    ConceptSource --> Concept : returns
+    ConceptSource --> ConceptQuery : takes
+```
+
+Status: no production `ConceptSource` exists. Only `InMemoryConceptSource` in `query-field-testfixtures` implements it. `ConceptSourceContractTest` in the same module tests it.
+
+#### Merge conflicts
+
+A merge conflict occurs when 2 or more versions in scope define the same property with a different `FieldType` or `Cardinality`. The same property means the same UUID.
+
+The Field is kept and marked. The resolution does not drop the Field and does not fail. The Field gets the widest common type. Two different types give `STRING`, and any `UNKNOWN` type gives `UNKNOWN`. Two different cardinalities give `MANY`. The query still runs over records from every version.
+
+A consumer should offer only the operators that are valid for every definition. For example, `issuedAt` is `STRING` in v1 and `DATETIME` in v2. The consumer offers `is`, `is not`, `is in`, `exists`, and `does not exist`. It does not offer `>` or `between`.
+
+`Field.conflict()` returns `Optional<FieldConflict>`. The records are in the package `org.sequeless.query.field.api`:
+
+| Type | Components | What each component does |
+|---|---|---|
+| `FieldConflict` | `List<ConflictingDefinition> definitions` | Lists every definition of the group, from the oldest to the newest version. |
+| | `String reason` | Explains what changed, for example "datatype changed between versions". |
+| `ConflictingDefinition` | `OntologyVersionRef version` | Names the version that holds the definition. |
+| | `FieldType type` | Holds the type in that version. |
+| | `Cardinality cardinality` | Holds the cardinality in that version. |
+
+```mermaid
+classDiagram
+    class Field {
+        Optional~FieldConflict~ conflict
+    }
+    class FieldConflict {
+        List~ConflictingDefinition~ definitions
+        String reason
+    }
+    class ConflictingDefinition {
+        OntologyVersionRef version
+        FieldType type
+        Cardinality cardinality
+    }
+
+    Field --> FieldConflict : conflict
+    FieldConflict "1" o-- "*" ConflictingDefinition : definitions
+```
+
+`FieldMerger` creates both records. It is in the package `org.sequeless.query.field.internal`. Only the test fixtures use it: `InMemoryFieldSource`, `PropertyFixture`, and `RelationshipFixture`. No production `FieldSource` creates a `FieldConflict`. `SchemaFieldSource` does not use `FieldMerger`.
+
 ### Known gaps
 
 - `FieldSource.expand` and `FieldSource.describe` have no production caller. Only tests and test fixtures call them. `DefaultQueryService` calls `resolve` and `rootClasses`.
 - `SchemaFieldSource` does not raise `EDGE_NOT_WALKABLE`, `PRINCIPAL_DENIED`, `EMPTY_INTERSECTION`, or `SCHEME_UNAVAILABLE`. The in-memory fixtures raise `EDGE_NOT_WALKABLE`, `PRINCIPAL_DENIED`, and `EMPTY_INTERSECTION`. Only the in-memory concept source raises `SCHEME_UNAVAILABLE`.
 - `ConceptSource` has no production implementation and no bean. Only test code uses it.
+- No production `FieldSource` creates a `FieldConflict`. Only the in-memory fixture does.
 - Each Query port has 2 implementations. Use the Postgres adapters for production. Use the in-memory classes of `query-testkit` for tests.
 
 ## Use in a Spring Boot host
