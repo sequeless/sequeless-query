@@ -23,7 +23,7 @@
     <sequeless.enforcer.core.skip>false</sequeless.enforcer.core.skip>
     <!-- Published: the adapter is released with the query side (spec 14, section 7.1). -->
     <maven.deploy.skip>false</maven.deploy.skip>
-    <schema-contract.version>0.1.0</schema-contract.version>
+    <schema-contract.version>0.2.0</schema-contract.version>
     <kernel-identity.version>0.1.1</kernel-identity.version>
     <assertj.version>3.27.7</assertj.version>
     <junit.version>6.1.3</junit.version>
@@ -54,7 +54,7 @@
       <artifactId>schema-contract</artifactId>
       <version>${schema-contract.version}</version>
       <exclusions>
-        <!-- schema-contract 0.1.0 pins kernel-identity 0.1.0. This module declares 0.1.1, the version query-field uses, so the older one is excluded to keep the tree convergent. -->
+        <!-- schema-contract 0.2.0 also pins kernel-identity 0.1.1. The exclusion keeps this module's declared version authoritative if schema-contract moves ahead. -->
         <exclusion>
           <groupId>org.sequeless</groupId>
           <artifactId>kernel-identity</artifactId>

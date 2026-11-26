@@ -193,6 +193,7 @@ ArchUnit: every module has a `BoundaryRulesTest` (ADR kernel 0001 and spec 11 se
 - New: `FieldSource.rootClasses(TenantId tenant)` returns `List<ClassRef>` (#24 point 8).
 - `query-schema-adapter` implements `FieldSource` over `SchemaSource.schema(TenantId)`. It maps `Schema.ontologyVersion().value()` one-to-one to an `OntologyVersionRef` (Q10).
 - The stamp: `StampCalculator` sorts `OntologyVersionRef` values numerically before joining them. This changes the stamp format from the ontology's string sort, and the change is recorded in ADR 0001 (Q11).
+- **No consistent active Ontology (Q19).** `SchemaSource` throws `NoConsistentOntologyException` (schema-contract 0.2.0); `OntologyException` (ontology-core) extends it. query-schema-adapter translates it to `UNKNOWN_TENANT` in every `FieldSource` method. Option C of the Navigator's choice: the supertype relationship, not a wrapper and not a throw-site change. One-way door: the public supertype relationship.
 
 ### 6.4 Postgres JSONB adapter
 
