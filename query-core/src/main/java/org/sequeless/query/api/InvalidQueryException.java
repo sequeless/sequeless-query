@@ -7,6 +7,9 @@ import java.util.List;
  * not allow: a filter the validator rejects, a sort on a Field that is not sortable, or a facet on
  * a Field that is not facetable.
  *
+ * <p>{@link org.sequeless.query.spi.BrowsePort} implementations throw it too, for a filter shape they do
+ * not evaluate.
+ *
  * <p>The message is {@code "invalid query: "} followed by the problems joined by {@code "; "}.
  */
 public final class InvalidQueryException extends RuntimeException {

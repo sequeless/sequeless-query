@@ -2,6 +2,7 @@ package org.sequeless.query.spi;
 
 import org.sequeless.query.api.BrowseQuery;
 import org.sequeless.query.api.BrowseResult;
+import org.sequeless.query.api.InvalidQueryException;
 import org.sequeless.query.api.ObjectView;
 import org.sequeless.query.field.api.FieldScope;
 
@@ -55,6 +56,25 @@ import org.sequeless.query.field.api.FieldScope;
  *   <li><b>Facet bucket order.</b> For each facet path, the buckets are sorted by count, descending,
  *       then by bucket value in Unicode code point order. An object with no value for a facet
  *       contributes to no bucket of that facet.
+ *   <li><b>Reference facet buckets.</b> A facet on a relationship Field (a Field of type {@code
+ *       OBJECT_REF}) buckets each object by the text of its target's {@link
+ *       org.sequeless.kernel.values.ObjectId}, the canonical lowercase UUID string. A target that is
+ *       missing, or soft-deleted, or belongs to another tenant, contributes to no bucket: the buckets
+ *       are an inner join on the visible targets. The total is not affected, since it counts the
+ *       matching objects. The bucket order is the scalar rule above; id text is ASCII, so code point
+ *       order and {@link String#compareTo} agree on it.
+ *   <li><b>Free text reads the root scope.</b> {@link BrowseQuery#text()} is matched against the
+ *       searchable Fields of the root scope only: the direct, single-segment Fields of {@code
+ *       scope.facets()} that are {@code searchable}. Traversal Fields that an expansion added to the
+ *       scope are not searched. The text applies to every object in scope, concrete subtype instances
+ *       included. A property that is searchable only on a subtype is not searched. This is a known
+ *       limit: the port takes no union of searchable Fields across the concrete types.
+ *   <li><b>Unsupported filter shapes are a typed rejection.</b> A port that does not evaluate a filter
+ *       shape fails with {@link InvalidQueryException}, listing each problem, and never with another
+ *       exception or a wrong answer. The shapes are: a filter node other than {@code AndFilter},
+ *       {@code OrFilter} or {@code FieldFilter} (such as {@code AnyFilter}); a {@code FieldFilter}
+ *       whose path is a traversal (more than one segment); and the {@code like} and {@code not like}
+ *       operators. The query-testkit's {@code BrowseContract} asserts the rejection for each of these.
  * </ul>
  */
 public interface BrowsePort {
@@ -76,6 +96,8 @@ public interface BrowsePort {
      * @return a non-{@code null} result containing the matching page of objects, the total match
      *     count, and the computed facet buckets
      * @throws NullPointerException if any argument is {@code null}
+     * @throws InvalidQueryException if the filter has a shape this port does not evaluate (see the
+     *     interface-level javadoc)
      */
     BrowseResult browse(FieldScope scope, BrowseQuery query);
 }
