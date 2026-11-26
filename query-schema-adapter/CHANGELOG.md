@@ -3,6 +3,13 @@
 * The following workspace dependencies were updated
     * org.sequeless:query-field bumped to 0.1.1
 
+## [0.2.2](https://github.com/sequeless/sequeless-query/compare/query-schema-adapter-v0.2.1...query-schema-adapter-v0.2.2) (2026-11-26)
+
+
+### Bug Fixes
+
+* **query:** a single-valued property is sortable (spec 17, sequeless-prototype [#45](https://github.com/sequeless/sequeless-query/issues/45)) ([#21](https://github.com/sequeless/sequeless-query/issues/21)) ([83e7dc4](https://github.com/sequeless/sequeless-query/commit/83e7dc4c605e1bbda85ea662695a029934191f2f))
+
 ## [0.2.1](https://github.com/sequeless/sequeless-query/compare/query-schema-adapter-v0.2.0...query-schema-adapter-v0.2.1) (2026-11-26)
 
 

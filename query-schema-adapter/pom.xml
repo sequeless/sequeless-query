@@ -12,7 +12,7 @@
 
   <groupId>org.sequeless</groupId>
   <artifactId>query-schema-adapter</artifactId>
-  <version>0.2.1</version>
+  <version>0.2.2</version>
   <name>query-schema-adapter</name>
   <description>Schema to Field adapter: the only module that depends on schema-contract</description>
 
