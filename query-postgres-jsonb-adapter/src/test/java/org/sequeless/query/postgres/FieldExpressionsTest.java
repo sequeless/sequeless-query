@@ -95,6 +95,13 @@ class FieldExpressionsTest {
     }
 
     @Test
+    void aBackslashInTheIriIsRejectedBeforeItIsEmbedded() {
+        assertThatThrownBy(() -> FieldExpressions.sqlOf(direct("urn:ex:a\\b", FieldType.STRING)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("backslash");
+    }
+
+    @Test
     void theExpressionHasNoBindParameters() {
         assertThat(FieldExpressions.sqlExpressionOf(direct(IRI, FieldType.DATE)).parameters())
                 .isEmpty();

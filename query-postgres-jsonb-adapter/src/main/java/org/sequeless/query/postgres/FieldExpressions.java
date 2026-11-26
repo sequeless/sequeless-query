@@ -15,7 +15,8 @@ import org.sequeless.query.field.api.FieldType;
  *
  * <p>The property IRI is embedded as a string literal, never a bind parameter: an index expression cannot take
  * parameters, and the WHERE text must be the same text. Each single quote in the IRI is doubled, which keeps the
- * IRI inside its literal. Only a direct Field (one segment) has an expression. A traversal Field, and a Field of
+ * IRI inside its literal, and a backslash is rejected, since its meaning depends on {@code standard_conforming_strings}.
+ * Only a direct Field (one segment) has an expression. A traversal Field, and a Field of
  * a type with no expression ({@code GEO}, {@code BINARY}, {@code UNKNOWN}), is rejected with {@link
  * InvalidQueryException}.
  *
@@ -143,8 +144,18 @@ final class FieldExpressions {
                 + " || 'Z')";
     }
 
-    /** A single-quoted SQL string literal, with each embedded single quote doubled. */
+    /**
+     * A single-quoted SQL string literal, with each embedded single quote doubled. A backslash is rejected: whether it
+     * escapes depends on {@code standard_conforming_strings}, so the doubled-quote rule alone is safe only with that setting
+     * on.
+     *
+     * @throws IllegalArgumentException if {@code text} contains a backslash
+     */
     static String literal(String text) {
+        if (text.indexOf('\\') >= 0) {
+            throw new IllegalArgumentException(
+                    "the property IRI '" + text + "' contains a backslash, which an embedded literal does not allow");
+        }
         return "'" + text.replace("'", "''") + "'";
     }
 }

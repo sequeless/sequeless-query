@@ -314,10 +314,10 @@ public final class InMemoryBrowsePort implements BrowsePort {
         }
         Optional<OperatorDefinition> operator = OPERATORS.findByCanonicalOrAlias(filter.op());
         if (operator.isEmpty()) {
-            problems.add("unknown operator '" + filter.op() + "'");
+            problems.add("unknown operator '" + filter.op() + "' on '" + filter.path() + "'");
         } else if (!EVALUATED_OPERATORS.contains(operator.get().getCanonicalName())) {
             problems.add("operator '" + operator.get().getCanonicalName()
-                    + "' is not evaluated by the in-memory browse port");
+                    + "' is not evaluated by the in-memory browse port on '" + filter.path() + "'");
         }
     }
 

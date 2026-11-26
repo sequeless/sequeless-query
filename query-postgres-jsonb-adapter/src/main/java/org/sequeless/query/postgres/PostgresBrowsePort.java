@@ -23,13 +23,17 @@ import org.sequeless.query.field.api.FieldPath;
 import org.sequeless.query.field.api.FieldScope;
 import org.sequeless.query.spi.BrowsePort;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * The PostgreSQL {@link BrowsePort} over {@code sq_object} (spec 14, sections 6.1 and 6.4).
  *
  * <p>A browse runs three kinds of statement: a count of the matching objects, the page of items in result order, and one
  * bucket query per facet. Each takes the same candidates and the same translated filter, built by {@link BrowseSql}.
- * The shapes this port does not evaluate are rejected first, by {@link BrowseValidation}, before any SQL is built.
+ * The shapes this port does not evaluate are rejected first, by {@link BrowseValidation}, and every SQL fragment is built
+ * before the first statement runs, so a key this port cannot express (a GEO, BINARY or UNKNOWN Field) fails with no query.
  *
  * <p>Result order is the one {@code BrowsePort} states. Ids compare as {@code uuid}, which Postgres orders by unsigned
  * bytes, so a sort on an id matches the contract. Soft-deleted objects are never read, and the tenant is the scope's.
@@ -37,8 +41,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
  * whatever class it belongs to (spec 14, Q22 and Q29). That is a known difference from the in-memory reference, which reads
  * only the root's own searchable Fields. {@code PostgresTextSearchKnownLimitIT} pins it.
  *
- * <p>Each statement runs on its own connection use, so the count and the page are not one snapshot. The adapter takes
- * no transaction, because the browse reads and never writes.
+ * <p>The count, the page and the facet buckets run in one read-only transaction at REPEATABLE READ, so they read one
+ * snapshot and the total agrees with the items. The browse never writes.
  */
 public final class PostgresBrowsePort implements BrowsePort {
 
@@ -47,12 +51,19 @@ public final class PostgresBrowsePort implements BrowsePort {
                     + "updated_at, updated_by, deleted_at";
 
     private final JdbcClient jdbcClient;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * @param jdbcClient the client that runs the statements; must not be {@code null}
+     * @param transactionManager the manager of the read-only transaction the statements share; must not be {@code null},
+     *     and must manage the same DataSource as {@code jdbcClient}
      */
-    public PostgresBrowsePort(JdbcClient jdbcClient) {
+    public PostgresBrowsePort(JdbcClient jdbcClient, PlatformTransactionManager transactionManager) {
         this.jdbcClient = Objects.requireNonNull(jdbcClient, "jdbcClient must not be null");
+        Objects.requireNonNull(transactionManager, "transactionManager must not be null");
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate.setReadOnly(true);
+        this.transactionTemplate.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
     }
 
     @Override
@@ -64,15 +75,25 @@ public final class PostgresBrowsePort implements BrowsePort {
             return new BrowseResult(List.of(), 0, emptyFacets(query.facets()));
         }
 
+        // Every fragment that can throw is built here, outside the transaction and before its first statement.
         BrowseSql sql = new BrowseSql(scope, query);
         SqlFragment matching = sql.matching();
+        SqlFragment order = sql.orderBy();
+        Map<FieldPath, SqlFragment> bucketQueries = new LinkedHashMap<>();
+        for (FieldPath facet : query.facets()) {
+            bucketQueries.put(facet, sql.bucketsOf(facet));
+        }
+        return transactionTemplate.execute(status -> read(query, matching, order, bucketQueries));
+    }
+
+    private BrowseResult read(
+            BrowseQuery query, SqlFragment matching, SqlFragment order, Map<FieldPath, SqlFragment> bucketQueries) {
         long total = jdbcClient
                 .sql("SELECT count(*) FROM sq_object WHERE " + matching.sql())
                 .params(matching.parameters())
                 .query(Long.class)
                 .single();
 
-        SqlFragment order = sql.orderBy();
         List<Object> itemParameters = new ArrayList<>(matching.parameters());
         itemParameters.addAll(order.parameters());
         itemParameters.add(query.page().size());
@@ -85,16 +106,13 @@ public final class PostgresBrowsePort implements BrowsePort {
                 .list();
 
         Map<FieldPath, List<FacetBucket>> facets = new LinkedHashMap<>();
-        for (FieldPath facet : query.facets()) {
-            SqlFragment buckets = sql.bucketsOf(facet);
-            facets.put(
-                    facet,
-                    jdbcClient
-                            .sql(buckets.sql())
-                            .params(buckets.parameters())
-                            .query(PostgresBrowsePort::toBucket)
-                            .list());
-        }
+        bucketQueries.forEach((facet, buckets) -> facets.put(
+                facet,
+                jdbcClient
+                        .sql(buckets.sql())
+                        .params(buckets.parameters())
+                        .query(PostgresBrowsePort::toBucket)
+                        .list()));
         return new BrowseResult(items, total, facets);
     }
 

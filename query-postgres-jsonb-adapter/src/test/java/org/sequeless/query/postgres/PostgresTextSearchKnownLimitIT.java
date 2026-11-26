@@ -55,7 +55,7 @@ class PostgresTextSearchKnownLimitIT extends AbstractPostgresIT {
                         new PropertyRef(PROJECT_NAME_IRI), Value.text("Budget project")));
         seedTask(withoutProjectName, taskScope, Map.of(new PropertyRef(TITLE_IRI), Value.text("Quarterly review")));
 
-        List<ObjectId> found = new PostgresBrowsePort(jdbc())
+        List<ObjectId> found = new PostgresBrowsePort(jdbc(), new DataSourceTransactionManager(dataSource))
                 .browse(taskScope, textQuery("budget")).items().stream()
                         .map(ObjectView::id)
                         .toList();

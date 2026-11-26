@@ -177,7 +177,7 @@ class PostgresDateBrowseIT extends AbstractPostgresIT {
     }
 
     private static BrowseResult browse(BrowseQuery query) {
-        return new PostgresBrowsePort(jdbc()).browse(SCOPE, query);
+        return new PostgresBrowsePort(jdbc(), new DataSourceTransactionManager(dataSource)).browse(SCOPE, query);
     }
 
     private static BrowseQuery query(List<Sort> sorts, List<FieldPath> facets) {
