@@ -99,4 +99,32 @@ class FieldExpressionsTest {
         assertThat(FieldExpressions.sqlExpressionOf(direct(IRI, FieldType.DATE)).parameters())
                 .isEmpty();
     }
+
+    @ParameterizedTest
+    @EnumSource(
+            value = FieldType.class,
+            names = {
+                "STRING",
+                "LANG_STRING",
+                "TIME",
+                "DURATION",
+                "IRI_REF",
+                "CONCEPT_REF",
+                "INTEGER",
+                "DECIMAL",
+                "BOOLEAN",
+                "OBJECT_REF"
+            })
+    void typesWithAnImmutableCastAreIndexable(FieldType type) {
+        assertThat(FieldExpressions.indexable(type)).isTrue();
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+            value = FieldType.class,
+            names = {"DATE", "DATETIME", "GEO", "BINARY", "UNKNOWN"})
+    void stableCastsAndTypesWithNoExpressionAreNotIndexable(FieldType type) {
+        // DATE and DATETIME cast text with date_in and timestamptz_in, which are STABLE on postgres:18.
+        assertThat(FieldExpressions.indexable(type)).isFalse();
+    }
 }

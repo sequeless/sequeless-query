@@ -54,6 +54,20 @@ final class FieldExpressions {
     }
 
     /**
+     * Whether a Field of {@code type} can have an expression index. PostgreSQL allows an index expression only when
+     * every function in it is IMMUTABLE. The text-to-{@code date} and text-to-{@code timestamptz} casts are STABLE
+     * (their input depends on DateStyle and TimeZone; checked on postgres:18, where {@code date_in} and {@code
+     * timestamptz_in} are {@code s}), so a {@code DATE} or {@code DATETIME} expression can be queried but not indexed.
+     * Every other type's cast is IMMUTABLE.
+     *
+     * @param type the Field's type; must not be {@code null}
+     * @return {@code true} when {@link #supports} holds and the expression is IMMUTABLE
+     */
+    static boolean indexable(FieldType type) {
+        return supports(type) && type != FieldType.DATE && type != FieldType.DATETIME;
+    }
+
+    /**
      * The SQL expression of {@code field} over {@code sq_object}, with no bind parameters.
      *
      * @param field a Field; must not be {@code null}

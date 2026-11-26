@@ -25,6 +25,7 @@
     <!-- The version the org's Spring modules pin (automation-temporal-adapter, expression-spring-boot-autoconfig). -->
     <spring-boot.version>4.1.1</spring-boot.version>
     <filter-sql-adapter.version>0.1.5</filter-sql-adapter.version>
+    <kernel-identity.version>0.1.1</kernel-identity.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <postgresql.version>42.7.14</postgresql.version>
     <assertj.version>3.27.7</assertj.version>
@@ -71,6 +72,19 @@
       <version>${filter-sql-adapter.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.sequeless</groupId>
+      <artifactId>kernel-identity</artifactId>
+      <version>${kernel-identity.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
     </dependency>
@@ -86,11 +100,6 @@
       <groupId>org.sequeless</groupId>
       <artifactId>query-testkit</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-jdbc</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

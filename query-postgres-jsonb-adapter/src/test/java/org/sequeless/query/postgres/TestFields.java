@@ -26,9 +26,14 @@ final class TestFields {
 
     private TestFields() {}
 
-    /** A direct Field (one segment) whose property IRI is {@code iri}. */
+    /** A direct Field (one segment) whose property IRI is {@code iri}, with every capability. */
     static Field direct(String iri, FieldType type) {
-        return withPath(new FieldPath(List.of(segment(iri, null))), type);
+        return direct(iri, type, ALL);
+    }
+
+    /** A direct Field (one segment) whose property IRI is {@code iri}, with the given capabilities. */
+    static Field direct(String iri, FieldType type, Capabilities capabilities) {
+        return withPath(new FieldPath(List.of(segment(iri, null))), type, capabilities);
     }
 
     /** A traversal Field through the given property IRIs; every segment but the last lands on a class. */
@@ -38,16 +43,16 @@ final class TestFields {
             ClassRef target = i < iris.length - 1 ? classRef("urn:class:" + iris[i]) : null;
             segments.add(segment(iris[i], target));
         }
-        return withPath(new FieldPath(segments), FieldType.STRING);
+        return withPath(new FieldPath(segments), FieldType.STRING, ALL);
     }
 
-    private static Field withPath(FieldPath path, FieldType type) {
+    private static Field withPath(FieldPath path, FieldType type, Capabilities capabilities) {
         return new Field(
                 path,
                 type,
                 null,
                 Cardinality.SINGLE,
-                ALL,
+                capabilities,
                 new LocalizedText(path.asSlugPath(), "en"),
                 null,
                 Optional.empty(),
