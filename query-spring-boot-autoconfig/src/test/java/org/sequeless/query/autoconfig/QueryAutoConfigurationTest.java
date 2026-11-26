@@ -167,7 +167,7 @@ class QueryAutoConfigurationTest {
     }
 
     @Test
-    void aHostTransactionManagerIsUsedByThePorts() {
+    void aHostTransactionManagerIsUsedByTheIndexPreparationPort() {
         RecordingTransactionManager host = new RecordingTransactionManager();
         runner.withBean(SchemaSource.class, EmptySchemaSource::new)
                 .withBean(DataSource.class, () -> new DriverManagerDataSource(UNREACHABLE_URL))

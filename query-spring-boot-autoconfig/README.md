@@ -8,7 +8,7 @@ Spring Boot autoconfiguration of the Query side (spec 14, section 5). It is thin
 - `BrowsePort`, `ReadPort` and `IndexPreparationPort`: the Postgres adapters over the host's `DataSource` bean.
 - `QueryService`: built over those four by `QueryServiceAutoConfiguration`, which runs after the first class. Its `prepare` delegates to the same `IndexPreparationPort` bean, so there is one instance. It is registered only when the `SchemaSource`, the Field source and the three ports all exist.
 
-Nothing is registered without both a `SchemaSource` bean and a `DataSource` bean. Every bean backs off when the host defines a bean of its type, so a host can supply its own. The adapters use the host's `PlatformTransactionManager` when it defines one, and otherwise a `DataSourceTransactionManager` over the same `DataSource`.
+`QueryAutoConfiguration` registers nothing without both a `SchemaSource` bean and a `DataSource` bean. `QueryService` needs only the `SchemaSource` and the four Query beans, which a host may supply itself. Every bean backs off when the host defines a bean of its type, so a host can supply its own. The adapters use the host's `PlatformTransactionManager` when it defines one, and otherwise a `DataSourceTransactionManager` over the same `DataSource`.
 
 The `sequeless.query.*` configuration prefix is reserved for this module. It has no keys in 0.1.0, and no `@ConfigurationProperties` class reads it.
 
