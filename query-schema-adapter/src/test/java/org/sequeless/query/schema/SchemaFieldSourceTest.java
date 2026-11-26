@@ -584,7 +584,9 @@ class SchemaFieldSourceTest {
 
     @Test
     void subtypesThatAgreeOnAPropertyShareOneFieldWhoseFlagsAreTheConjunction() {
-        // The root and a subtype both declare "status" with one cardinality; the subtype withholds facet.
+        // The root and a subtype both declare "status" with one cardinality. The root withholds searchable, the
+        // subtype withholds facet, so each flag is false on one side only: an AND gives (facet false, search false),
+        // first-wins gives facet true, and last-wins gives search true. Each wrong rule fails this test.
         FieldScope scope = resolve(
                 schema(
                         1,
@@ -597,7 +599,7 @@ class SchemaFieldSourceTest {
                                         Datatype.STRING,
                                         org.sequeless.ontology.schema.api.Cardinality.atMost(1),
                                         true,
-                                        true)),
+                                        false)),
                         type(
                                 "Task",
                                 false,
@@ -611,7 +613,89 @@ class SchemaFieldSourceTest {
                 "Work");
 
         assertThat(scope.facets()).hasSize(1);
-        assertThat(facetNamed(scope, "status").capabilities()).isEqualTo(new Capabilities(true, false, true, true));
+        assertThat(facetNamed(scope, "status").capabilities()).isEqualTo(new Capabilities(true, false, false, true));
+    }
+
+    @Test
+    void subtypesThatDifferOnlyInTheirMinimumCardinalityAreAConflict() {
+        // exactly(1) and atMost(1) share max 1, so a rule that compared only max would call the property sortable.
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        type("Work", true, List.of()),
+                        type(
+                                "A",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "status",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.exactly(1),
+                                        true,
+                                        true)),
+                        type(
+                                "B",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "status",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        true,
+                                        true))),
+                "Work");
+
+        assertThat(scope.facets()).hasSize(1);
+        Field status = facetNamed(scope, "status");
+        assertThat(status.capabilities()).isEqualTo(new Capabilities(false, false, false, false));
+        assertThat(status.type()).isEqualTo(FieldType.UNKNOWN);
+        assertThat(status.cardinality()).isEqualTo(Cardinality.MANY);
+        assertThat(status.path().segments().get(0).targetClass()).isNull();
+    }
+
+    @Test
+    void relationshipsSharingATargetButNotACardinalityAreNotWalkable() {
+        FieldSource source = source(schema(
+                1,
+                type("Work", true, List.of()),
+                type("A", false, List.of("Work"), relationship("owner", "Person")),
+                type(
+                        "B",
+                        false,
+                        List.of("Work"),
+                        relationship("owner", "Person", org.sequeless.ontology.schema.api.Cardinality.atMost(1))),
+                concreteType("Person")));
+        FieldScope scope = source.resolve(request("Work"));
+
+        assertThat(scope.relationships()).isEmpty();
+        assertThat(facetNamed(scope, "owner").capabilities()).isEqualTo(new Capabilities(false, false, false, false));
+        assertCode(() -> source.expand(scope, path(segment("owner", "Person"))), FieldErrorCode.CLASS_NOT_REACHABLE);
+    }
+
+    @Test
+    void aConcreteRootCoversItsOwnPropertiesAndTheUnionWithItsConcreteSubtype() {
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        concreteType("Person", attribute("name", Datatype.STRING, true, true)),
+                        type("Student", false, List.of("Person"), attribute("school", Datatype.STRING, true, true))),
+                "Person");
+
+        assertThat(scope.facets())
+                .extracting(field -> field.path().asSlugPath())
+                .containsExactlyInAnyOrder("name", "school");
+        assertThat(scope.concreteTypes()).containsExactlyInAnyOrder(classRef("Person"), classRef("Student"));
+    }
+
+    @Test
+    void describeOfASingleTypeRelationshipKeepsTheCallersPath() {
+        // origin/main returns the caller's path; the schema's canonical path would carry the target class.
+        FieldSource source = source(schema(1, concreteType("Person", relationship("friend", "Person"))));
+
+        Field field = source.describe(request("Person"), path(segment("friend", null)));
+
+        assertThat(field.path()).isEqualTo(path(segment("friend", null)));
+        assertThat(field.path().segments().get(0).targetClass()).isNull();
     }
 
     @Test

@@ -159,8 +159,9 @@ public final class SchemaFieldSource implements FieldSource {
                 walk.enter(relationship);
                 continue;
             }
-            // A disagreeing root property is listed with every capability false, so it is refused here as well.
-            Field field = index == 0 ? mapper.unionField(definitions) : mapper.field(path, property);
+            // A root hop keeps the caller's path when its definitions agree, as origin/main does; a disagreeing
+            // root property is listed with every capability false, so it is refused here as well.
+            Field field = index == 0 ? mapper.unionField(path, definitions) : mapper.field(path, property);
             if (!field.capabilities().filterable()) {
                 throw new FieldResolutionException(FieldErrorCode.PATH_NOT_FILTERABLE, path);
             }

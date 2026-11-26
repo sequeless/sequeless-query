@@ -51,6 +51,9 @@ final class PropertyMapper {
     }
 
     /**
+     * The Field of one definition. Its label is that definition's own; a union of agreeing definitions
+     * (see {@link #unionField(FieldPath, List)}) takes the label of the first definition in root-first order.
+     *
      * @param path the path the Field is reached by; the caller decides it, so expansions can prefix it
      * @param property the property the Field describes
      * @return the Field for {@code property} at {@code path}
@@ -85,13 +88,16 @@ final class PropertyMapper {
      * @return one Field per property IRI, in first-declared order
      */
     List<Field> unionFields(List<TypeDefinition> covered) {
-        return groupByIri(covered).stream().map(this::unionField).toList();
+        return groupByIri(covered).stream().map(group -> unionField(group)).toList();
     }
 
     /**
      * The Relationships a root's FieldScope walks: one per relationship IRI on which every declaring type
      * agrees. A relationship whose declarations conflict is left out, because no single target can be
      * walked into. Its Field is still listed by {@link #unionFields}, with every capability false.
+     *
+     * <p>An agreeing relationship takes its label from the first definition in root-first order, the same
+     * rule {@link #unionField(FieldPath, List)} applies to its Field.
      *
      * @param covered the root and its transitive subtypes, as {@link SchemaView#typeAndSubtypes} returns them
      * @return the edge record of every agreeing relationship, in first-declared order
@@ -119,11 +125,18 @@ final class PropertyMapper {
      * native datatype, and a path whose segment names no target class. {@link Field#conflict()} stays empty:
      * a {@link org.sequeless.query.field.api.FieldConflict} is keyed by ontology version, and this
      * disagreement is between types of one version, so it would misstate what the conflict is.
+     *
+     * <p>An agreeing group takes its label from the first definition in root-first order, and its path is
+     * {@code path}, which the caller chose. This method does not change the label rule; it only states it.
+     *
+     * @param path the path the Field is reached by, used when the definitions agree
+     * @param group the definitions of one property, root-first; never empty
+     * @return the Field of the group
      */
-    Field unionField(List<PropertyDefinition> group) {
+    Field unionField(FieldPath path, List<PropertyDefinition> group) {
         PropertyDefinition first = group.get(0);
         if (agree(group)) {
-            return field(path(first), first, capabilities(group));
+            return field(path, first, capabilities(group));
         }
         PathSegment segment = new PathSegment(Iris.id(first.iri()), first.iri(), Iris.slug(first.iri()), null);
         return new Field(
@@ -139,6 +152,17 @@ final class PropertyMapper {
                 InferenceSupport.MAY_BE_INFERRED,
                 view.versions(),
                 Optional.empty());
+    }
+
+    /**
+     * The Field of a group as a root's FieldScope lists it: at the group's own canonical path (see
+     * {@link #unionField(FieldPath, List)}).
+     *
+     * @param group the definitions of one property, root-first; never empty
+     * @return the Field of the group
+     */
+    Field unionField(List<PropertyDefinition> group) {
+        return unionField(path(group.get(0)), group);
     }
 
     /** Whether every definition of one property matches the first one in kind, datatype or target, and cardinality. */
