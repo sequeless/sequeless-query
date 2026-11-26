@@ -1,12 +1,16 @@
 package org.sequeless.query.schema;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.sequeless.ontology.schema.api.AttributeDefinition;
 import org.sequeless.ontology.schema.api.Datatype;
 import org.sequeless.ontology.schema.api.PropertyDefinition;
 import org.sequeless.ontology.schema.api.RelationshipDefinition;
+import org.sequeless.ontology.schema.api.TypeDefinition;
 import org.sequeless.query.field.api.Capabilities;
 import org.sequeless.query.field.api.Cardinality;
 import org.sequeless.query.field.api.ClassRef;
@@ -52,12 +56,16 @@ final class PropertyMapper {
      * @return the Field for {@code property} at {@code path}
      */
     Field field(FieldPath path, PropertyDefinition property) {
+        return field(path, property, capabilities(List.of(property)));
+    }
+
+    private Field field(FieldPath path, PropertyDefinition property, Capabilities capabilities) {
         return new Field(
                 path,
                 fieldType(property),
                 nativeDatatypeIri(property),
                 cardinality(property.cardinality()),
-                capabilities(property),
+                capabilities,
                 Iris.label(property.label()),
                 // DisplayHints carries no description, so the Field's description is blank.
                 Iris.label(""),
@@ -66,6 +74,101 @@ final class PropertyMapper {
                 InferenceSupport.MAY_BE_INFERRED,
                 view.versions(),
                 Optional.empty());
+    }
+
+    /**
+     * The Fields a root's FieldScope carries: one per property IRI declared by the root or by any of its
+     * transitive subtypes (spec 17). The root's own properties come first, in declaration order, then the
+     * subtype-only ones. The conflict rule is on {@link #unionField}.
+     *
+     * @param covered the root and its transitive subtypes, as {@link SchemaView#typeAndSubtypes} returns them
+     * @return one Field per property IRI, in first-declared order
+     */
+    List<Field> unionFields(List<TypeDefinition> covered) {
+        return groupByIri(covered).stream().map(this::unionField).toList();
+    }
+
+    /**
+     * The Relationships a root's FieldScope walks: one per relationship IRI on which every declaring type
+     * agrees. A relationship whose declarations conflict is left out, because no single target can be
+     * walked into. Its Field is still listed by {@link #unionFields}, with every capability false.
+     *
+     * @param covered the root and its transitive subtypes, as {@link SchemaView#typeAndSubtypes} returns them
+     * @return the edge record of every agreeing relationship, in first-declared order
+     */
+    List<Relationship> unionRelationships(List<TypeDefinition> covered) {
+        return groupByIri(covered).stream()
+                .filter(PropertyMapper::agree)
+                .map(group -> group.get(0))
+                .filter(RelationshipDefinition.class::isInstance)
+                .map(RelationshipDefinition.class::cast)
+                .map(this::relationship)
+                .toList();
+    }
+
+    /**
+     * The conflict rule for a property declared by more than one covered type (spec 17).
+     *
+     * <p>The definitions agree when they share the kind (attribute or relationship), the datatype or the
+     * target type, and the cardinality. Agreeing definitions give one Field: filterable as always, facetable
+     * and searchable only when every definition allows it, and sortable by the Q-sort rule, which the
+     * agreeing cardinality makes the same for all of them.
+     *
+     * <p>Disagreeing definitions never pick one. The Field is still listed, with all four capabilities false,
+     * type {@link FieldType#UNKNOWN}, cardinality {@link Cardinality#MANY} (it may hold several values), no
+     * native datatype, and a path whose segment names no target class. {@link Field#conflict()} stays empty:
+     * a {@link org.sequeless.query.field.api.FieldConflict} is keyed by ontology version, and this
+     * disagreement is between types of one version, so it would misstate what the conflict is.
+     */
+    private Field unionField(List<PropertyDefinition> group) {
+        PropertyDefinition first = group.get(0);
+        if (agree(group)) {
+            return field(path(first), first, capabilities(group));
+        }
+        PathSegment segment = new PathSegment(Iris.id(first.iri()), first.iri(), Iris.slug(first.iri()), null);
+        return new Field(
+                new FieldPath(List.of(segment)),
+                FieldType.UNKNOWN,
+                null,
+                Cardinality.MANY,
+                new Capabilities(false, false, false, false),
+                Iris.label(first.label()),
+                Iris.label(""),
+                Optional.empty(),
+                OperatorRestriction.unrestricted(),
+                InferenceSupport.MAY_BE_INFERRED,
+                view.versions(),
+                Optional.empty());
+    }
+
+    /** Whether every definition of one property matches the first one in kind, datatype or target, and cardinality. */
+    private static boolean agree(List<PropertyDefinition> group) {
+        PropertyDefinition first = group.get(0);
+        return group.stream().allMatch(other -> sameDefinition(first, other));
+    }
+
+    private static boolean sameDefinition(PropertyDefinition a, PropertyDefinition b) {
+        return switch (a) {
+            case AttributeDefinition attribute ->
+                b instanceof AttributeDefinition other
+                        && attribute.datatype() == other.datatype()
+                        && attribute.cardinality().equals(other.cardinality());
+            case RelationshipDefinition relationship ->
+                b instanceof RelationshipDefinition other
+                        && relationship.targetTypeIri().equals(other.targetTypeIri())
+                        && relationship.cardinality().equals(other.cardinality());
+        };
+    }
+
+    /** The property definitions of the covered types, grouped by property IRI, in first-declared order. */
+    private static List<List<PropertyDefinition>> groupByIri(List<TypeDefinition> covered) {
+        Map<String, List<PropertyDefinition>> groups = new LinkedHashMap<>();
+        for (TypeDefinition type : covered) {
+            for (PropertyDefinition property : type.properties()) {
+                groups.computeIfAbsent(property.iri(), iri -> new ArrayList<>()).add(property);
+            }
+        }
+        return new ArrayList<>(groups.values());
     }
 
     /**
@@ -100,9 +203,18 @@ final class PropertyMapper {
      * flags. A property is sortable when it holds at most one value per object (cardinality max is
      * present and equal to 1). This overrides Navigator decision Q16 for sort only, decided for the
      * sequeless-prototype cut-over (spec 17). Change a default here and nowhere else.
+     *
+     * <p>Over several agreeing definitions (spec 17, subtypes), facet and search hold only when every
+     * definition allows them, so no subtype's flag is silently overridden by another's. Sort needs no such
+     * rule: the definitions agree on cardinality, so the first one's cardinality answers for all of them.
+     *
+     * @param definitions the definitions of one property, all of the same kind, datatype or target and
+     *     cardinality; never empty
      */
-    private static Capabilities capabilities(PropertyDefinition property) {
-        return new Capabilities(true, property.facet(), property.searchable(), isSortable(property));
+    private static Capabilities capabilities(List<PropertyDefinition> definitions) {
+        boolean facet = definitions.stream().allMatch(PropertyDefinition::facet);
+        boolean searchable = definitions.stream().allMatch(PropertyDefinition::searchable);
+        return new Capabilities(true, facet, searchable, isSortable(definitions.get(0)));
     }
 
     private static boolean isSortable(PropertyDefinition property) {

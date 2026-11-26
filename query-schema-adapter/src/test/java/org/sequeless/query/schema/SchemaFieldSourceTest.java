@@ -535,8 +535,211 @@ class SchemaFieldSourceTest {
         assertThatNullPointerException().isThrownBy(() -> new SchemaFieldSource(null));
     }
 
+    @Test
+    void anAbstractRootCoversTheSortablePropertyOfItsConcreteSubtype() {
+        // Spec 17: a property declared only by a subtype is part of the root's scope, and the Q-sort rule applies.
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        type("Work", true, List.of()),
+                        type(
+                                "Task",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "priority",
+                                        Datatype.INTEGER,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        true,
+                                        true))),
+                "Work");
+
+        Field priority = facetNamed(scope, "priority");
+        assertThat(priority.type()).isEqualTo(FieldType.INTEGER);
+        assertThat(priority.cardinality()).isEqualTo(Cardinality.SINGLE);
+        assertThat(priority.capabilities().sortable()).isTrue();
+        assertThat(priority.capabilities()).isEqualTo(new Capabilities(true, true, true, true));
+        assertThat(priority.conflict()).isEmpty();
+        assertThat(scope.concreteTypes()).containsExactly(classRef("Task"));
+    }
+
+    @Test
+    void theUnionReachesPropertiesAndRelationshipsOfAbstractIntermediateSubtypes() {
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        type("Work", true, List.of()),
+                        type("Mid", true, List.of("Work"), attribute("owner", Datatype.STRING, true, true)),
+                        type("Leaf", false, List.of("Mid"), relationship("assignee", "Person")),
+                        concreteType("Person")),
+                "Work");
+
+        assertThat(scope.facets())
+                .extracting(field -> field.path().asSlugPath())
+                .containsExactlyInAnyOrder("owner", "assignee");
+        assertThat(scope.relationships()).extracting(Relationship::slug).containsExactly("assignee");
+        assertThat(scope.relationships().get(0).targetClass()).isEqualTo(classRef("Person"));
+        assertThat(scope.concreteTypes()).containsExactly(classRef("Leaf"));
+    }
+
+    @Test
+    void subtypesThatAgreeOnAPropertyShareOneFieldWhoseFlagsAreTheConjunction() {
+        // The root and a subtype both declare "status" with one cardinality; the subtype withholds facet.
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        type(
+                                "Work",
+                                true,
+                                List.of(),
+                                attribute(
+                                        "status",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        true,
+                                        true)),
+                        type(
+                                "Task",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "status",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        false,
+                                        true))),
+                "Work");
+
+        assertThat(scope.facets()).hasSize(1);
+        assertThat(facetNamed(scope, "status").capabilities()).isEqualTo(new Capabilities(true, false, true, true));
+    }
+
+    @Test
+    void subtypesThatDisagreeOnCardinalityGiveAnUnusableFieldAndPickNoneOfTheirDefinitions() {
+        // Spec 17 conflict rule: A says atMost(1) (sortable), B says unbounded. Neither wins.
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        type("Work", true, List.of()),
+                        type(
+                                "A",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "status",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        true,
+                                        true)),
+                        type(
+                                "B",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "status",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.optional(),
+                                        true,
+                                        true))),
+                "Work");
+
+        assertThat(scope.facets()).hasSize(1);
+        Field status = facetNamed(scope, "status");
+        assertThat(status.capabilities()).isEqualTo(new Capabilities(false, false, false, false));
+        assertThat(status.capabilities().sortable()).isFalse();
+        assertThat(status.type()).isEqualTo(FieldType.UNKNOWN);
+        assertThat(status.cardinality()).isEqualTo(Cardinality.MANY);
+        assertThat(status.nativeDatatypeIri()).isNull();
+        assertThat(status.path().segments().get(0).targetClass()).isNull();
+        assertThat(status.conflict()).isEmpty();
+    }
+
+    @Test
+    void subtypesThatDisagreeOnDatatypeGiveAnUnusableFieldEvenWhenCardinalityAgrees() {
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        type("Work", true, List.of()),
+                        type(
+                                "A",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "code",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        true,
+                                        true)),
+                        type(
+                                "B",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "code",
+                                        Datatype.INTEGER,
+                                        org.sequeless.ontology.schema.api.Cardinality.atMost(1),
+                                        true,
+                                        true))),
+                "Work");
+
+        Field code = facetNamed(scope, "code");
+        assertThat(code.capabilities()).isEqualTo(new Capabilities(false, false, false, false));
+        assertThat(code.type()).isEqualTo(FieldType.UNKNOWN);
+    }
+
+    @Test
+    void anAttributeAndARelationshipSharingAnIriConflictAndTheRelationshipIsNotWalkable() {
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        type("Work", true, List.of()),
+                        type(
+                                "A",
+                                false,
+                                List.of("Work"),
+                                attribute(
+                                        "owner",
+                                        Datatype.STRING,
+                                        org.sequeless.ontology.schema.api.Cardinality.optional(),
+                                        true,
+                                        true)),
+                        type("B", false, List.of("Work"), relationship("owner", "Person")),
+                        concreteType("Person")),
+                "Work");
+
+        assertThat(scope.facets()).hasSize(1);
+        assertThat(facetNamed(scope, "owner").capabilities()).isEqualTo(new Capabilities(false, false, false, false));
+        assertThat(scope.relationships()).isEmpty();
+    }
+
+    @Test
+    void relationshipsWithDifferentTargetsConflictAndNeitherTargetIsWalked() {
+        FieldScope scope = resolve(
+                schema(
+                        1,
+                        type("Work", true, List.of()),
+                        type("A", false, List.of("Work"), relationship("owner", "Person")),
+                        type("B", false, List.of("Work"), relationship("owner", "Company")),
+                        concreteType("Person"),
+                        concreteType("Company")),
+                "Work");
+
+        assertThat(scope.facets()).hasSize(1);
+        Field owner = facetNamed(scope, "owner");
+        assertThat(owner.capabilities()).isEqualTo(new Capabilities(false, false, false, false));
+        assertThat(owner.path().segments().get(0).targetClass()).isNull();
+        assertThat(scope.relationships()).isEmpty();
+    }
+
     private static FieldSource source(Schema schema) {
         return new SchemaFieldSource(new FakeSchemaSource(Map.of(TENANT, schema)));
+    }
+
+    private static Field facetNamed(FieldScope scope, String slug) {
+        return scope.facets().stream()
+                .filter(field -> field.path().asSlugPath().equals(slug))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no facet named " + slug + " in " + scope.facets()));
     }
 
     /** A request for {@code Person} that may hop once, with the revisit guard on, so only depth is in play. */

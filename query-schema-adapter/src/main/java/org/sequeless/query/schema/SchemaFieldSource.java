@@ -63,16 +63,15 @@ public final class SchemaFieldSource implements FieldSource {
         TypeDefinition root = root(view, request.root());
         requireActiveVersion(view, request.versionPolicy());
         PropertyMapper mapper = new PropertyMapper(view);
-        List<PropertyDefinition> properties = root.properties();
-        List<Field> facets = properties.stream()
-                .map(property -> mapper.field(mapper.path(property), property))
-                .toList();
+        // A root covers its own properties and every transitive subtype's (spec 17), abstract ones included.
+        List<TypeDefinition> covered = view.typeAndSubtypes(root);
+        List<Field> facets = mapper.unionFields(covered);
         Set<ClassRef> concreteTypes = view.concreteTypes(root);
         String stamp = StampCalculator.stamp(request, view.versions(), concreteTypes);
         return new FieldScope(
                 view.classRef(root),
                 facets,
-                mapper.relationships(properties),
+                mapper.unionRelationships(covered),
                 stamp,
                 view.versions(),
                 concreteTypes,
