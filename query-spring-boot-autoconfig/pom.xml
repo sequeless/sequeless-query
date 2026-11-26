@@ -19,8 +19,7 @@
   <properties>
     <!-- Matches query-core: this module reads query-core classes compiled for 25. -->
     <maven.compiler.release>25</maven.compiler.release>
-    <!-- Not a core module: Spring is its job, so the parent's enforcer ban on Spring stays off, as in query-postgres-jsonb-adapter. -->
-    <sequeless.enforcer.core.skip>true</sequeless.enforcer.core.skip>
+    <!-- Not a core module: the parent defaults sequeless.enforcer.core.skip to true, so its enforcer ban on Spring stays off here, as in query-postgres-jsonb-adapter. -->
     <!-- Published: the BOM resolves it (spec 14, sections 7.1 and 7.2). Released by release-please, first at 0.1.0. -->
     <maven.deploy.skip>false</maven.deploy.skip>
     <!-- The version the org's Spring modules pin (query-postgres-jsonb-adapter, automation-temporal-adapter). -->
@@ -91,7 +90,7 @@
       <artifactId>schema-contract</artifactId>
       <version>${schema-contract.version}</version>
       <exclusions>
-        <!-- schema-contract 0.2.0 also pins kernel-identity 0.1.1. The exclusion keeps this module's declared version authoritative if schema-contract moves ahead. -->
+        <!-- schema-contract 0.2.0 also pins kernel-identity 0.1.1. This module declares kernel-identity only in test scope; at runtime it comes through query-field, which sets the version. The exclusion keeps schema-contract's pin off this module's classpath. -->
         <exclusion>
           <groupId>org.sequeless</groupId>
           <artifactId>kernel-identity</artifactId>
@@ -136,6 +135,7 @@
       <artifactId>spring-boot</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Test scope: the tests name TenantId and Scope directly. The runtime copy comes through query-field. -->
     <dependency>
       <groupId>org.sequeless</groupId>
       <artifactId>kernel-identity</artifactId>
