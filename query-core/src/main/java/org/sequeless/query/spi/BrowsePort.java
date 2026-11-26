@@ -1,0 +1,81 @@
+package org.sequeless.query.spi;
+
+import org.sequeless.query.api.BrowseQuery;
+import org.sequeless.query.api.BrowseResult;
+import org.sequeless.query.api.ObjectView;
+import org.sequeless.query.field.api.FieldScope;
+
+/**
+ * The outbound port that runs filtered, sorted, paged, faceted and free-text browse queries over
+ * stored objects, returning each matching object as an {@link ObjectView}. Exactly one
+ * implementation is wired into the running application at a time; use cases never choose between
+ * implementations themselves.
+ *
+ * <p>This javadoc is the full behavioural contract every implementation must satisfy. It is not
+ * advisory: the query-testkit's {@code BrowseContract} asserts every clause of it mechanically
+ * against any port passed to it, and any adapter's own test suite is expected to extend that
+ * contract. An implementation that violates a clause here is not a valid adapter, regardless of
+ * what its own tests claim.
+ *
+ * <ul>
+ *   <li><b>Null handling.</b> Every argument to every method on this interface must be non-{@code
+ *       null}. A conforming implementation throws {@link NullPointerException} when any argument
+ *       is {@code null}.
+ *   <li><b>Tenant scoping.</b> {@link #browse} is scoped to {@code scope.request().tenantId()}: an
+ *       object created under one tenant is invisible to a query made on a {@link FieldScope} whose
+ *       request names a different tenant, as if it did not exist. The browse takes no
+ *       authorization {@code Scope}; the tenant is the one the scope was resolved for.
+ *   <li><b>Soft-delete filtering.</b> Soft-deleted objects are never returned by {@link #browse}.
+ *       The port has no option to include them.
+ *   <li><b>Candidates.</b> Only objects whose type is in {@code scope.concreteTypes()} are
+ *       matched: the root and its concrete subtypes. An empty set gives an empty result with no
+ *       error. The port does no hierarchy reasoning.
+ *   <li><b>Result order.</b> Results are totally ordered, so pages over unchanged data never
+ *       overlap or skip. With a non-empty {@code query.sorts()}: each sort key in list order, then
+ *       {@code id} ascending, whatever the keys' directions. Otherwise, with {@code query.text()}
+ *       present: relevance, best first, then {@code createdAt} ascending, then {@code id}
+ *       ascending. Otherwise: {@code createdAt} ascending, then {@code id} ascending. An object
+ *       with no value for a sort key sorts last when the key is ascending and first when it is
+ *       descending. {@code createdAt} is the audit creation instant and compares as stored, at the
+ *       precision the adapter keeps. Ids compare in unsigned byte order of the 16-byte UUID, most
+ *       significant byte first, which equals the order of the lowercase canonical strings; this is
+ *       not {@link java.util.UUID#compareTo}, which is signed. A sort key whose Field is a
+ *       relationship (its last segment lands on a class) orders by target id in the same order.
+ *       The query-testkit's {@code BrowseContract} asserts each id tie-break with fixed ids.
+ *   <li><b>Page overrun is empty, never a throw.</b> A {@link org.sequeless.query.api.Page} whose
+ *       number is past the last page returns a {@link BrowseResult} with empty {@link
+ *       BrowseResult#items()} and the correct {@link BrowseResult#total()}.
+ *   <li><b>Facet counting is "conventional multi-select."</b> For a facet on path {@code P}, the
+ *       counts are computed with the filter minus its top-level AND conjuncts that are a
+ *       {@code FieldFilter} on {@code P}, compared by the Q7 key (spec 14 section 6.5). Every other
+ *       conjunct is kept whole, including any {@code OrFilter} or {@code AnyFilter} that mentions
+ *       {@code P}. A filter that is not an {@code AndFilter} counts as one conjunct; a
+ *       {@code FieldFilter} on {@code P} is removed, leaving match-all. The free-text condition
+ *       narrows every facet.
+ *   <li><b>Facet bucket order.</b> For each facet path, the buckets are sorted by count, descending,
+ *       then by bucket value in Unicode code point order. An object with no value for a facet
+ *       contributes to no bucket of that facet.
+ * </ul>
+ */
+public interface BrowsePort {
+
+    /**
+     * Runs a single filtered, sorted, paged, faceted and optionally free-text query. See the
+     * interface-level javadoc for the full contract this method must satisfy, including tenant
+     * scoping, soft-delete filtering, the default sort order used when {@link BrowseQuery#sorts()}
+     * is empty, page-overrun behaviour, and the "conventional multi-select" facet counting rule.
+     *
+     * <p>The filter, sort and facet paths have already been checked against {@code scope} by the
+     * caller: the port may rely on each of them naming a Field of the scope with the capability
+     * the query needs.
+     *
+     * @param scope the resolved Field scope; its request names the tenant the query runs for;
+     *     must not be {@code null}
+     * @param query the filter, text, sort, paging and facet request to run; must not be {@code
+     *     null}
+     * @return a non-{@code null} result containing the matching page of objects, the total match
+     *     count, and the computed facet buckets
+     * @throws NullPointerException if any argument is {@code null}
+     */
+    BrowseResult browse(FieldScope scope, BrowseQuery query);
+}
