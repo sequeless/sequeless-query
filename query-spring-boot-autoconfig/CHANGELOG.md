@@ -12,6 +12,24 @@
 * The following workspace dependencies were updated
     * org.sequeless:query-schema-adapter bumped to 0.2.3
 
+## [0.4.1](https://github.com/sequeless/sequeless-query/compare/query-spring-boot-autoconfig-v0.4.0...query-spring-boot-autoconfig-v0.4.1) (2026-11-28)
+
+
+### Documentation
+
+* fix stale and inconsistent contributor docs ([77fe1ae](https://github.com/sequeless/sequeless-query/commit/77fe1aececd4be9d6d5fe749fb8318a0df70451d))
+* remove external spec and decision references from code ([a2aeea8](https://github.com/sequeless/sequeless-query/commit/a2aeea82be0304d739814ee1ab14ea766822a214))
+* remove references to deleted ADRs and specs ([ab7bdda](https://github.com/sequeless/sequeless-query/commit/ab7bddabf6aaf943ac8026e27d47a75e27e35bc7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+    * org.sequeless:query-core bumped to 0.2.2,
+    * org.sequeless:query-field bumped to 0.1.2,
+    * org.sequeless:query-postgres-jsonb-adapter bumped to 0.2.2,
+    * org.sequeless:query-schema-adapter bumped to 0.2.4
+
 ## [0.4.0](https://github.com/sequeless/sequeless-query/compare/query-spring-boot-autoconfig-v0.3.1...query-spring-boot-autoconfig-v0.4.0) (2026-11-26)
 
 

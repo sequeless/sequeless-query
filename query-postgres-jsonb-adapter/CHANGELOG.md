@@ -5,6 +5,28 @@
     * org.sequeless:query-core bumped to 0.1.1,
     * org.sequeless:query-testkit bumped to 0.1.1
 
+## [0.2.2](https://github.com/sequeless/sequeless-query/compare/query-postgres-jsonb-adapter-v0.2.1...query-postgres-jsonb-adapter-v0.2.2) (2026-11-28)
+
+
+### Bug Fixes
+
+* **query-postgres-jsonb-adapter:** restore released comments in V1 and V2 migrations ([#28](https://github.com/sequeless/sequeless-query/issues/28)) ([916831b](https://github.com/sequeless/sequeless-query/commit/916831bf24aef750f4cad2c442bdd8c2154b8311))
+
+
+### Documentation
+
+* remove external spec and decision references from code ([a2aeea8](https://github.com/sequeless/sequeless-query/commit/a2aeea82be0304d739814ee1ab14ea766822a214))
+* remove references to deleted ADRs and specs ([ab7bdda](https://github.com/sequeless/sequeless-query/commit/ab7bddabf6aaf943ac8026e27d47a75e27e35bc7))
+* remove spec 17 references ([d84d03d](https://github.com/sequeless/sequeless-query/commit/d84d03da8fdbd7472bfd445cf3aedeb29ebe64e7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+    * org.sequeless:query-core bumped to 0.2.2,
+    * org.sequeless:query-field bumped to 0.1.2,
+    * org.sequeless:query-testkit bumped to 0.2.2
+
 ## [0.2.1](https://github.com/sequeless/sequeless-query/compare/query-postgres-jsonb-adapter-v0.2.0...query-postgres-jsonb-adapter-v0.2.1) (2026-11-26)
 
 

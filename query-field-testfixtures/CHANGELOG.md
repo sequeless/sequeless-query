@@ -3,6 +3,21 @@
 * The following workspace dependencies were updated
     * org.sequeless:query-field bumped to 0.1.1
 
+## [0.2.1](https://github.com/sequeless/sequeless-query/compare/query-field-testfixtures-v0.2.0...query-field-testfixtures-v0.2.1) (2026-11-28)
+
+
+### Documentation
+
+* remove last section citations to field-contract.md ([3e99dc3](https://github.com/sequeless/sequeless-query/commit/3e99dc38c7a2bcf7767627ffdd77e07a5427b880))
+* remove references to deleted ADRs and specs ([ab7bdda](https://github.com/sequeless/sequeless-query/commit/ab7bddabf6aaf943ac8026e27d47a75e27e35bc7))
+* remove stale field-contract.md citations from code ([79d11ae](https://github.com/sequeless/sequeless-query/commit/79d11aeb7cd3856b03f772ce6dbbefce7c478dca))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+    * org.sequeless:query-field bumped to 0.1.2
+
 ## [0.2.0](https://github.com/sequeless/sequeless-query/compare/query-field-testfixtures-v0.1.1...query-field-testfixtures-v0.2.0) (2026-11-26)
 
 

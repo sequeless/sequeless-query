@@ -3,6 +3,20 @@
 * The following workspace dependencies were updated
     * org.sequeless:query-field bumped to 0.1.1
 
+## [0.2.2](https://github.com/sequeless/sequeless-query/compare/query-core-v0.2.1...query-core-v0.2.2) (2026-11-28)
+
+
+### Documentation
+
+* remove external spec and decision references from code ([a2aeea8](https://github.com/sequeless/sequeless-query/commit/a2aeea82be0304d739814ee1ab14ea766822a214))
+* remove references to deleted ADRs and specs ([ab7bdda](https://github.com/sequeless/sequeless-query/commit/ab7bddabf6aaf943ac8026e27d47a75e27e35bc7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+    * org.sequeless:query-field bumped to 0.1.2
+
 ## [0.2.1](https://github.com/sequeless/sequeless-query/compare/query-core-v0.2.0...query-core-v0.2.1) (2026-11-26)
 
 
