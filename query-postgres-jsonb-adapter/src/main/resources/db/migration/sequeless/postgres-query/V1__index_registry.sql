@@ -1,4 +1,4 @@
--- Index registries for the Query side: which sq:indexed properties have an expression
+-- Index registries for the Query side (spec 13, P7): which sq:indexed properties have an expression
 -- index, and which sq:searchable properties feed search_vector. Moved here from the Command migration
 -- V2. CREATE TABLE IF NOT EXISTS, so a database that already ran V2 keeps its tables.
 
